@@ -1,0 +1,1255 @@
+openapi: 3.1.0
+info:
+  title: FitHalo Scoreboards
+  version: '1.0'
+  summary: The API a FitHalo Scoreboard serves to the FitHalo apps.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+  description: |
+    A FitHalo Scoreboard is a small server that a gym, a workplace or a group of friends hosts for
+    themselves. Members share their FitHalo weekly challenge with it at a level they choose, and read
+    everyone else's. This document is the contract between the server and its clients, and the source of truth
+    for both.
+
+    ## Conventions
+
+    - **JSON everywhere** except avatars, in UTF-8, with `application/json` in both directions.
+    - **SI units**: metres, seconds, kilograms, degrees Celsius. Each client shows its own units.
+    - **Dates** are `YYYY-MM-DD` and **times** RFC 3339 with an offset.
+    - **Identifiers** (`MemberID`, `ActivityID`, the board's `id`) are 16 bytes in unpadded base64url,
+      22 characters.
+    - **Unknown fields are ignored** by both sides, so either can add an optional field without breaking
+      the other. **Open vocabularies** (activity types, set types, tiers) list their known values in
+      `spec/vocabularies.json`; a client shows a value it does not know generically rather than failing.
+      Other open values say so where they are defined; see **Versions**.
+    - **Reads carry an `ETag`** and honour `If-None-Match`, so a client opening a board that has not
+      changed gets `304` and no body.
+    - **Responses are gzipped** when the request's `Accept-Encoding` allows gzip and a successful body is
+      1 KB or more. A gzipped response's `ETag` is weak (`W/"…"`), and `If-None-Match` accepts either form.
+    - **Errors** are RFC 9457 problem details (see `Problem`).
+
+    ## Versions
+
+    Boards and clients update separately, so every client works with older and newer boards, and every
+    board with older and newer clients.
+
+    - **The API's version** is `MAJOR.MINOR`: this document's `info.version`, and `apiVersion` on
+      `GET /board`. A minor version only adds: optional fields, operations, values of open vocabularies and
+      problem codes. A major version is a new base path, such as `/api/v2`, served beside the old one.
+      `serverVersion` names the build for people; clients never compare it.
+    - **Features are announced on the board.** Each feature a later version adds appears as a field of
+      `Board`, and an absent field means the feature is off. A client reads what a board offers from those
+      fields rather than from version numbers, and an older board reads as one with every later feature off.
+    - **An operation the server does not serve** answers `unknownOperation`, never `notFound`, so a client
+      can tell an older board from a missing member or weekly challenge.
+    - **Clients name themselves** in `User-Agent` as `<app>/<version> (<platform>; build <build>)`, such
+      as `FitHalo/1.0 (iOS; build 412)`, naming neither the device nor its system version. A board may answer
+      `upgradeRequired` to a client too old to serve; the 1.0 server never does.
+    - **Closed values** are `ScoreLevel`, `ActivityLevel` and `weekStartDay`; both sides know every value,
+      and a new one would be a new major version. **Open values** may grow in any minor version, and a client
+      reads one it does not know as follows:
+
+      | Value | An unknown value reads as |
+      |---|---|
+      | `Me.status` | `pending`: the member can do nothing but wait |
+      | `Board.joinMode` | No join mode shown; `acceptingRequests` and `passwordRequired` still say whether and how to join |
+      | `Board.ranking`, `Scoreboard.ranking` | The order of `entries` as the server sent it |
+      | Activity types, set types, tiers | Shown generically (`spec/vocabularies.json`) |
+      | Problem codes | Handled by the problem's `status` |
+    - **Sharing grows by fields, never by levels.** A kind of sharing a later version adds is a new optional
+      field of `Sharing`, at its most private when absent. In `JoinRequest` an absent field is its most
+      private value; in `MemberUpdate` an absent field keeps its current value, so a client changing sharing
+      leaves alone the fields it does not know.
+    - **A weekly challenge grows only with what every client computes from the same workouts.** Each upload
+      replaces the whole weekly challenge, from whichever of a member's devices sends it, so a field only newer
+      clients send comes and goes with each upload. Data that does not come from the challenge's workouts gets
+      operations of its own.
+    - **A weekly challenge field** needs an entry in `spec/sharing.json`. An older server strips a field it does not know,
+      as it strips one above the member's sharing, and its response shows what it kept.
+    - **`spec/sharing.json` and `spec/vocabularies.json`** carry a `version` that counts changes to the file.
+      Entries are only added, never renamed, reused or removed.
+    - **Invite links** keep their form in every version: `fithalo://scoreboard?url=<board>&code=<invite>`
+      in the QR code, and `https://<board>/join/<invite>` to share. A later version may add query parameters,
+      which an older client ignores.
+    - **Stored data** is not part of the API. `docs/specifications.md` describes stored data and how a board upgrades it.
+
+    ## Authentication
+
+    A member is a P-256 key pair. Every request except `GET /board` and `GET /board/avatar` is signed
+    with the member's private key in the `Authorization` header, and the server holds only public keys.
+    The README's Member authentication section defines the signature exactly.
+
+    ## Sharing
+
+    What a weekly challenge may contain depends on the member's effective sharing: the lower of their own
+    choice and the board's maximum, field by field (see `Sharing`). The server keeps nothing above it, and
+    strips anything above it that a client sends. `spec/sharing.json` lists all `WeeklyChallenge` data and
+    the sharing each field needs, and is what both sides test against.
+
+    ## Limits
+
+    | What | Limit |
+    |---|---|
+    | Display name | 1 to 40 characters, leading and trailing space removed and each run of spaces inside collapsed to one; at least one visible character; no control, format (zero-width, soft hyphen, text-direction), line-separator, private-use or unassigned characters, apart from the joiners and tags inside an emoji; at most three combining marks on one character, and at most six tags in a flag, ending in a cancel tag |
+    | Members | 1,000 a board, waiting and active together; a join past it is refused with `memberLimitReached` |
+    | Custom exercise name | 1 to 100 characters, with no control, format or line-separator characters, apart from the joiners and tags inside an emoji |
+    | Avatar upload | JPEG or PNG, 256 KB, at most 2048 pixels a side and 3,145,728 pixels in all; served as JPEG, at most 512 × 512 |
+    | Weekly challenge body | 384 KB, so a stored weekly challenge fits any backend, DynamoDB's 400 KB items included; 200 activities, 50 exercises an activity, 50 sets an exercise, 20 clusters a set |
+    | Route | 5,000 points, 256 KB |
+    | Weekly challenge storage | 1 MB for one member's weekly challenge and its routes together; a weekly challenge or route upload that would store more is refused with `payloadTooLarge`, while replacing a route counts only the new one |
+    | Clock skew | 300 seconds either way |
+
+    ## Behind a proxy
+
+    A board in proxy mode answers `421 Misdirected Request`, with a plain-text body and before any
+    operation runs, when a request did not arrive over HTTPS or, with trusted proxies configured, came
+    from a peer that is not one of them.
+  contact:
+    name: FitHalo
+    url: https://fithalo.app
+servers:
+  - url: https://{board}/api/v1
+    description: A board. Every board is its own server; FitHalo learns the address from an invite.
+    variables:
+      board:
+        default: scoreboard.example.com
+        description: The board's host, and any path it is served under.
+security:
+  - memberSignature: []
+tags:
+  - name: Board
+  - name: Membership
+  - name: Weekly Challenges
+  - name: Media
+paths:
+  /board:
+    get:
+      tags: [Board]
+      operationId: getBoard
+      summary: The board's identity and rules
+      description: |
+        Unsigned, so the join screen can show the board before the member has a key on it. Carries no
+        member data.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The board.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Board'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /board/avatar:
+    get:
+      tags: [Board]
+      operationId: getBoardAvatar
+      summary: The board's own avatar
+      description: |
+        The image the admin chose to give the board a face, at most 512 pixels on its longer side.
+        Unsigned, like `GET /board`, so the join screen can show it. Present when the board's `hasAvatar`
+        is true; members' avatars allowed or not makes no difference. Sent with
+        `Cache-Control: public, max-age=300`, so a shared cache may serve a replaced avatar for up to five
+        minutes.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The avatar.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                contentMediaType: image/jpeg
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /members:
+    post:
+      tags: [Membership]
+      operationId: join
+      summary: Join the board
+      description: |
+        Signed with the key in the body, which proves the caller holds it. The `member` in the
+        `Authorization` header is the `MemberID` of that key.
+
+        A key the board already knows gets its existing membership back, with `200`, so a reinstall or
+        a new phone with the same identity lands where it was. A new key gets `201`, as `active` on an
+        open board or `pending` on one that needs approval.
+
+        A pending member can read `/board` and `/members/me`, change their display name or sharing, and
+        leave, which withdraws the request; everything else answers `memberPending` until the admin
+        approves. A declined request is deleted, so `/members/me` then answers `unauthenticated`, as it
+        does for anyone the board does not know. A board that approves members takes at most as many
+        waiting requests as its admin allows, and refuses more with `pendingLimitReached`. A board keeps
+        at most 1,000 members, waiting and active together, and refuses more with `memberLimitReached`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinRequest'
+      responses:
+        '200':
+          description: This key is already a member. Nothing in the request was applied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        '201':
+          description: Joined.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            `inviteInvalid`, `blocked`, `passwordIncorrect`, `memberLimitReached` or `pendingLimitReached`,
+            checked in that order, so only a caller with the current invite learns that a key is blocked.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /members/me:
+    get:
+      tags: [Membership]
+      operationId: getMe
+      summary: The caller's membership
+      description: Works while the membership is `pending`, so the app can tell when it is approved.
+      responses:
+        '200':
+          description: The membership.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+    patch:
+      tags: [Membership]
+      operationId: updateMe
+      summary: Change the display name or sharing
+      description: |
+        Lowering sharing deletes everything the server holds above the new effective sharing, in every
+        weekly challenge it keeps, before this request answers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberUpdate'
+      responses:
+        '200':
+          description: The updated membership.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+    delete:
+      tags: [Membership]
+      operationId: leave
+      summary: Leave the board
+      description: Erases the membership, the avatar, every weekly challenge and every route. Cannot be undone.
+      responses:
+        '204':
+          description: Gone.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+  /members/me/avatar:
+    put:
+      tags: [Media]
+      operationId: putAvatar
+      summary: Set the caller's avatar
+      description: |
+        The server decodes the image and re-encodes it as JPEG, which drops EXIF and location metadata.
+        Only where the board allows avatars.
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              contentMediaType: image/jpeg
+          image/png:
+            schema:
+              type: string
+              contentMediaType: image/png
+      responses:
+        '204':
+          description: Set.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: '`memberPending` or `avatarsNotAllowed`.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          description: '`imageInvalid`: the body could not be decoded as the image it claims to be.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    delete:
+      tags: [Media]
+      operationId: deleteAvatar
+      summary: Remove the caller's avatar
+      responses:
+        '204':
+          description: Removed, or there was none.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+  /members/me/weekly-challenges/{weekStart}:
+    put:
+      tags: [Weekly Challenges]
+      operationId: putWeeklyChallenge
+      summary: Put the caller's whole weekly challenge
+      description: |
+        Replaces whatever the server held for this weekly challenge. The challenge is recomputed and put again after
+        any change: a new or edited workout, a late sync, a change of sharing.
+
+        Anything above the caller's effective sharing is stripped rather than refused, and the response
+        is what was kept. A route belonging to an activity that is no longer in the weekly challenge is deleted.
+      parameters:
+        - $ref: '#/components/parameters/WeekStart'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WeeklyChallenge'
+      responses:
+        '200':
+          description: What the server kept.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyChallenge'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/MemberPending'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '422':
+          $ref: '#/components/responses/WeekOutOfRange'
+  /members/me/weekly-challenges/{weekStart}/activities/{activityID}/route:
+    put:
+      tags: [Media]
+      operationId: putRoute
+      summary: Put one activity's route
+      description: |
+        Only when the caller shares routes, and only for an activity in that stored weekly challenge, so
+        the challenge goes first. The start and end are already hidden by the client where the member asked for it;
+        the server never sees them.
+      parameters:
+        - $ref: '#/components/parameters/WeekStart'
+        - $ref: '#/components/parameters/ActivityID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Route'
+      responses:
+        '204':
+          description: Stored.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: '`memberPending` or `routesNotShared`.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+    delete:
+      tags: [Media]
+      operationId: deleteRoute
+      summary: Remove one activity's route
+      parameters:
+        - $ref: '#/components/parameters/WeekStart'
+        - $ref: '#/components/parameters/ActivityID'
+      responses:
+        '204':
+          description: Removed, or there was none.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+  /member-requests:
+    get:
+      tags: [Membership]
+      operationId: getMemberRequests
+      summary: The members waiting for approval
+      description: |
+        Only for an active member whose `Me.canApproveMembers` is true, which the admin sets per member.
+        Anyone else answers `notPermitted`, or `memberPending` while waiting themselves. Oldest first.
+      parameters:
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The waiting members.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberRequests'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/NotPermitted'
+  /member-requests/{memberID}/approve:
+    post:
+      tags: [Membership]
+      operationId: approveMemberRequest
+      summary: Let a waiting member in
+      description: |
+        Needs the same permission as `getMemberRequests`, and takes no body. Answers `notFound` for anyone
+        not waiting, including a request someone else has already approved or rejected.
+      parameters:
+        - $ref: '#/components/parameters/MemberID'
+      responses:
+        '204':
+          description: The member is active.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/NotPermitted'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /member-requests/{memberID}:
+    delete:
+      tags: [Membership]
+      operationId: rejectMemberRequest
+      summary: Reject a waiting member
+      description: |
+        Needs the same permission as `getMemberRequests`. Deletes the request, as an admin declining it does,
+        so the member's `/members/me` then answers `unauthenticated` and they may ask to join again. Answers
+        `notFound` for anyone not waiting, so the permission never reaches an active member.
+      parameters:
+        - $ref: '#/components/parameters/MemberID'
+      responses:
+        '204':
+          description: The request is gone.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/NotPermitted'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /weekly-challenges/{weekStart}:
+    get:
+      tags: [Weekly Challenges]
+      operationId: getScoreboard
+      summary: The scoreboard for one week
+      description: |
+        Every active member, in the board's ranking order, with a summary of their weekly challenge where
+        they have put one. Members without one come last, by name.
+      parameters:
+        - $ref: '#/components/parameters/WeekStart'
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The scoreboard.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scoreboard'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/MemberPending'
+        '422':
+          $ref: '#/components/responses/WeekOutOfRange'
+  /members/{memberID}/weekly-challenges/{weekStart}:
+    get:
+      tags: [Weekly Challenges]
+      operationId: getMemberWeeklyChallenge
+      summary: One member's weekly challenge, with its activities
+      parameters:
+        - $ref: '#/components/parameters/MemberID'
+        - $ref: '#/components/parameters/WeekStart'
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The member and their weekly challenge.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberWeeklyChallenge'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/MemberPending'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /members/{memberID}/avatar:
+    get:
+      tags: [Media]
+      operationId: getAvatar
+      summary: One member's avatar
+      parameters:
+        - $ref: '#/components/parameters/MemberID'
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The avatar.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                contentMediaType: image/jpeg
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/MemberPending'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /members/{memberID}/weekly-challenges/{weekStart}/activities/{activityID}/route:
+    get:
+      tags: [Media]
+      operationId: getRoute
+      summary: One activity's route
+      parameters:
+        - $ref: '#/components/parameters/MemberID'
+        - $ref: '#/components/parameters/WeekStart'
+        - $ref: '#/components/parameters/ActivityID'
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The route.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/MemberPending'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    memberSignature:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: |
+        `FitHalo-ECDSA member=<MemberID>,time=<Unix seconds>,nonce=<16 random bytes>,signature=<r‖s>`, an
+        ECDSA P-256 signature over the method, path and query, time, nonce and body. See
+        the README's Member authentication section.
+  parameters:
+    WeekStart:
+      name: weekStart
+      in: path
+      required: true
+      description: The first day of the week, which must fall on the board's `weekStartDay`.
+      schema:
+        type: string
+        format: date
+    MemberID:
+      name: memberID
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Identifier'
+    ActivityID:
+      name: activityID
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Identifier'
+    IfNoneMatch:
+      name: If-None-Match
+      in: header
+      required: false
+      schema:
+        type: string
+  headers:
+    ETag:
+      description: An opaque version of the response body, weak (`W/"…"`) when the body is gzipped.
+      schema:
+        type: string
+  responses:
+    NotModified:
+      description: Nothing has changed since the `ETag` given in `If-None-Match`.
+    BadRequest:
+      description: '`badRequest`: the body or a parameter is malformed; `detail` says which.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthenticated:
+      description: '`unauthenticated`, `clockSkew` or `replayed`.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    MemberPending:
+      description: '`memberPending`: the membership is waiting for the admin.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotPermitted:
+      description: '`notPermitted`: the admin has not allowed this member to approve requests, or `memberPending` while the member is waiting.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: '`notFound`.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    PayloadTooLarge:
+      description: '`payloadTooLarge`: the body is over its limit, or the weekly challenge would store more than its 1 MB (see **Limits**).'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnsupportedMediaType:
+      description: '`unsupportedMediaType`.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    WeekOutOfRange:
+      description: |
+        `weekOutOfRange`: the date is not on the board's `weekStartDay`, is older than the weeks the board
+        keeps, or is after next week.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    TooManyRequests:
+      description: '`rateLimited`. `Retry-After` says when to try again.'
+      headers:
+        Retry-After:
+          description: Seconds to wait.
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Identifier:
+      description: 16 bytes in unpadded base64url.
+      type: string
+      pattern: '^[A-Za-z0-9_-]{22}$'
+    ScoreLevel:
+      description: |
+        How much of the weekly challenge's score is shared, from most private to least. Each includes the one
+        before it. Closed: both sides must know every value.
+      type: string
+      enum: [progress, score, details]
+    ActivityLevel:
+      description: |
+        How much of each activity is shared, from most private to least. Each includes the one before
+        it. Applies only at `details`. Closed.
+      type: string
+      enum: [none, points, summary, full]
+    Sharing:
+      description: |
+        What a member shares, or the most a board allows. Effective sharing is the lower of the two,
+        field by field. `activity` applies only when `score` is `details`; `routes`, `strengthSets` and
+        `strengthWeights` only when `activity` is not `none`; `strengthWeights` only with `strengthSets`.
+        A field that does not apply reads as its lowest value. Fields a later version adds are optional and
+        read as their lowest value when absent; see **Versions**.
+      type: object
+      required: [score, activity, routes, strengthSets, strengthWeights]
+      properties:
+        score:
+          $ref: '#/components/schemas/ScoreLevel'
+        activity:
+          $ref: '#/components/schemas/ActivityLevel'
+        routes:
+          type: boolean
+        strengthSets:
+          type: boolean
+        strengthWeights:
+          type: boolean
+      example:
+        score: details
+        activity: points
+        routes: false
+        strengthSets: true
+        strengthWeights: false
+    Board:
+      type: object
+      required:
+        - id
+        - name
+        - hasAvatar
+        - weekStartDay
+        - retentionWeeks
+        - joinMode
+        - acceptingRequests
+        - passwordRequired
+        - avatarsAllowed
+        - maximumSharing
+        - ranking
+        - apiVersion
+        - serverVersion
+      properties:
+        id:
+          description: Created at setup and never changed, so the board keeps its members if it moves.
+          allOf:
+            - $ref: '#/components/schemas/Identifier'
+        name:
+          type: string
+          maxLength: 60
+        description:
+          type: string
+          maxLength: 500
+        hasAvatar:
+          description: Whether `GET /board/avatar` has the board's own avatar.
+          type: boolean
+        weekStartDay:
+          type: string
+          enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+        retentionWeeks:
+          description: How many weeks the board keeps, counting the current one.
+          type: integer
+          minimum: 1
+          maximum: 520
+        joinMode:
+          description: |
+            `open` makes a new member active at once; `approval` makes them `pending`. Open: see **Versions**.
+          type: string
+          examples: [open, approval]
+        acceptingRequests:
+          description: |
+            Whether a new member could join now. A board that approves members stops taking requests
+            while as many wait as its admin allows, so the join screen can say so before anyone tries.
+          type: boolean
+        passwordRequired:
+          type: boolean
+        avatarsAllowed:
+          description: Turning avatars off deletes every stored avatar.
+          type: boolean
+        maximumSharing:
+          $ref: '#/components/schemas/Sharing'
+        ranking:
+          description: 'How the scoreboard is ordered, by `progress` or by `name`. Open: see **Versions**.'
+          type: string
+          examples: [progress, name]
+        apiVersion:
+          description: The `MAJOR.MINOR` version of this document the server implements. See **Versions**.
+          type: string
+          pattern: '^[0-9]+\.[0-9]+$'
+          example: '1.0'
+        serverVersion:
+          description: The server build's version, for people. Clients never compare it.
+          type: string
+          example: 1.0.0
+    JoinRequest:
+      type: object
+      required: [inviteCode, publicKey, displayName, sharing]
+      properties:
+        inviteCode:
+          description: From the invite link or QR code.
+          type: string
+          maxLength: 64
+        password:
+          description: The board's password, when `passwordRequired`.
+          type: string
+          maxLength: 256
+        publicKey:
+          description: The member's P-256 public key, as a 65-byte uncompressed SEC 1 point in unpadded base64url.
+          type: string
+          pattern: '^[A-Za-z0-9_-]{87}$'
+        displayName:
+          description: See **Limits** for the characters a display name may hold.
+          type: string
+          minLength: 1
+          maxLength: 40
+        sharing:
+          $ref: '#/components/schemas/Sharing'
+    MemberUpdate:
+      description: Only the fields present change.
+      type: object
+      minProperties: 1
+      properties:
+        displayName:
+          description: See **Limits** for the characters a display name may hold.
+          type: string
+          minLength: 1
+          maxLength: 40
+        sharing:
+          $ref: '#/components/schemas/Sharing'
+    Me:
+      type: object
+      required: [id, displayName, status, sharing, effectiveSharing, hasAvatar, joinedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Identifier'
+        displayName:
+          type: string
+        status:
+          description: '`pending` until the admin approves, then `active`. Open: see **Versions**.'
+          type: string
+          examples: [pending, active]
+        canApproveMembers:
+          description: Whether the admin lets this member approve and reject requests. Absent reads as false.
+          type: boolean
+        sharing:
+          description: What the member chose.
+          allOf:
+            - $ref: '#/components/schemas/Sharing'
+        effectiveSharing:
+          description: What the board keeps, after its maximum.
+          allOf:
+            - $ref: '#/components/schemas/Sharing'
+        hasAvatar:
+          type: boolean
+        joinedAt:
+          type: string
+          format: date-time
+    MemberRequest:
+      description: A member waiting for approval, as a member who approves requests sees them.
+      type: object
+      required: [id, displayName, joinedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Identifier'
+        displayName:
+          type: string
+        joinedAt:
+          description: When the member asked to join.
+          type: string
+          format: date-time
+    MemberRequests:
+      type: object
+      required: [requests]
+      properties:
+        requests:
+          description: The waiting members, oldest first. At most the board's limit on waiting requests.
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberRequest'
+    MemberSummary:
+      description: A member as everyone on the board sees them.
+      type: object
+      required: [id, displayName, hasAvatar, sharing]
+      properties:
+        id:
+          $ref: '#/components/schemas/Identifier'
+        displayName:
+          type: string
+        hasAvatar:
+          type: boolean
+        sharing:
+          description: The member's effective sharing, so a client knows what to expect in their weekly challenge.
+          allOf:
+            - $ref: '#/components/schemas/Sharing'
+    WeeklyChallenge:
+      description: |
+        One member's weekly challenge at their effective sharing. Which fields may appear at which sharing
+        is listed in `spec/sharing.json`; this schema describes their shape.
+      type: object
+      required: [progress]
+      properties:
+        progress:
+          description: Score divided by goal. Above 1 once the goal is passed.
+          type: number
+          minimum: 0
+        score:
+          type: number
+          minimum: 0
+        goal:
+          type: number
+          exclusiveMinimum: 0
+        tier:
+          description: The challenge tier whose goal this is. Open vocabulary, `spec/vocabularies.json`.
+          type: string
+        breakdown:
+          $ref: '#/components/schemas/Breakdown'
+        activities:
+          description: The weekly challenge's activities that count for points, in the order they started.
+          type: array
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/Activity'
+        updatedAt:
+          description: When the server stored this weekly challenge. Set by the server; ignored in a request.
+          type: string
+          format: date-time
+          readOnly: true
+    WeeklyChallengeSummary:
+      description: A weekly challenge as the scoreboard shows it, without activities.
+      type: object
+      required: [progress, updatedAt]
+      properties:
+        progress:
+          type: number
+          minimum: 0
+        score:
+          type: number
+        goal:
+          type: number
+        tier:
+          type: string
+        breakdown:
+          $ref: '#/components/schemas/Breakdown'
+        activityCount:
+          description: Present when activities are shared.
+          type: integer
+          minimum: 0
+        updatedAt:
+          type: string
+          format: date-time
+    Breakdown:
+      description: Where the weekly challenge's score came from. Sums to `score`.
+      type: object
+      required: [exercise, dailyBonus, varietyBonus]
+      properties:
+        exercise:
+          type: number
+          minimum: 0
+        dailyBonus:
+          type: number
+          minimum: 0
+        varietyBonus:
+          type: number
+          minimum: 0
+    Activity:
+      type: object
+      required: [id, type, day, points]
+      properties:
+        id:
+          description: Stable across re-uploads of the same workout, and different on every board.
+          allOf:
+            - $ref: '#/components/schemas/Identifier'
+        type:
+          description: Open vocabulary, `spec/vocabularies.json`.
+          type: string
+        day:
+          description: The day it started, in the member's time zone. The time only comes with `start`.
+          type: string
+          format: date
+        points:
+          $ref: '#/components/schemas/ActivityPoints'
+        durationSeconds:
+          type: number
+          minimum: 0
+        distanceMeters:
+          type: number
+          minimum: 0
+        start:
+          type: string
+          format: date-time
+        details:
+          $ref: '#/components/schemas/ActivityDetails'
+        hasRoute:
+          description: Whether a route can be fetched for this activity.
+          type: boolean
+        strength:
+          $ref: '#/components/schemas/Strength'
+    ActivityPoints:
+      type: object
+      required: [base, bonus]
+      properties:
+        base:
+          type: number
+          minimum: 0
+        bonus:
+          type: number
+          minimum: 0
+    ActivityDetails:
+      description: |
+        Everything the workout records apart from its route and sets. Every field is optional, since
+        each workout type records a different subset.
+      type: object
+      properties:
+        activeEnergyKilocalories:
+          type: number
+          minimum: 0
+        averageHeartRate:
+          description: Beats per minute.
+          type: number
+          minimum: 0
+        maximumHeartRate:
+          type: number
+          minimum: 0
+        averageSpeedMetersPerSecond:
+          description: Clients show pace or speed as the activity calls for.
+          type: number
+          minimum: 0
+        elevationGainMeters:
+          type: number
+          minimum: 0
+        elevationLossMeters:
+          type: number
+          minimum: 0
+        steps:
+          type: integer
+          minimum: 0
+        averageCadence:
+          description: Steps or revolutions per minute.
+          type: number
+          minimum: 0
+        averagePowerWatts:
+          type: number
+          minimum: 0
+        averageMETs:
+          type: number
+          minimum: 0
+        carriedLoadKilograms:
+          description: A ruck, a weighted vest or a loaded carry.
+          type: number
+          minimum: 0
+        inclinePercent:
+          type: number
+        strollerLoadKilograms:
+          type: number
+          minimum: 0
+        exposureTemperatureCelsius:
+          description: A sauna or a cold plunge.
+          type: number
+        weather:
+          $ref: '#/components/schemas/Weather'
+    Weather:
+      type: object
+      properties:
+        temperatureCelsius:
+          type: number
+        humidityPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+    Strength:
+      type: object
+      required: [exercises]
+      properties:
+        exercises:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/StrengthExercise'
+    StrengthExercise:
+      description: |
+        A bundled exercise travels as its `catalogID`, so each viewer reads its name in their own
+        language; a custom exercise travels as its `name`.
+      type: object
+      required: [sets]
+      properties:
+        catalogID:
+          type: string
+          format: uuid
+        name:
+          description: No control, format or line-separator characters (see **Limits**).
+          type: string
+          maxLength: 100
+        loadIsAssistance:
+          description: The weights are assistance subtracted from bodyweight, as on an assisted pull-up.
+          type: boolean
+        sets:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/StrengthSet'
+    StrengthSet:
+      description: |
+        For a set split per side, the top-level fields are the left side and `right` the right.
+      type: object
+      required: [type]
+      properties:
+        type:
+          description: Open vocabulary, `spec/vocabularies.json`.
+          type: string
+        reps:
+          type: integer
+          minimum: 0
+        durationSeconds:
+          type: number
+          minimum: 0
+        distanceMeters:
+          type: number
+          minimum: 0
+        weightKilograms:
+          type: number
+          minimum: 0
+        right:
+          $ref: '#/components/schemas/StrengthSide'
+        clusters:
+          description: The efforts within a drop set or a myo-rep set, after the first.
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/StrengthCluster'
+    StrengthSide:
+      type: object
+      properties:
+        reps:
+          type: integer
+          minimum: 0
+        durationSeconds:
+          type: number
+          minimum: 0
+        weightKilograms:
+          type: number
+          minimum: 0
+    StrengthCluster:
+      type: object
+      properties:
+        reps:
+          type: integer
+          minimum: 0
+        weightKilograms:
+          type: number
+          minimum: 0
+    Route:
+      type: object
+      required: [polyline]
+      properties:
+        polyline:
+          description: |
+            The route's points in the Encoded Polyline Algorithm Format at precision 5, about a metre. At
+            most 5,000 points.
+          type: string
+          maxLength: 262144
+    Scoreboard:
+      type: object
+      required: [weekStart, ranking, entries]
+      properties:
+        weekStart:
+          type: string
+          format: date
+        ranking:
+          description: Open, like `Board.ranking`.
+          type: string
+          examples: [progress, name]
+        entries:
+          description: In ranking order.
+          type: array
+          items:
+            $ref: '#/components/schemas/ScoreboardEntry'
+    ScoreboardEntry:
+      type: object
+      required: [member]
+      properties:
+        member:
+          $ref: '#/components/schemas/MemberSummary'
+        challenge:
+          description: Absent when the member has not put this weekly challenge, or when the stored one can no longer be read.
+          allOf:
+            - $ref: '#/components/schemas/WeeklyChallengeSummary'
+    MemberWeeklyChallenge:
+      type: object
+      required: [member, challenge]
+      properties:
+        member:
+          $ref: '#/components/schemas/MemberSummary'
+        challenge:
+          $ref: '#/components/schemas/WeeklyChallenge'
+    Problem:
+      description: |
+        RFC 9457 problem details, as `application/problem+json`. `code` is the stable, machine-readable
+        part; `title` and `detail` are for people and may change.
+
+        | Code | Status | Meaning |
+        |---|---|---|
+        | `badRequest` | 400 | The body or a parameter is malformed. `detail` says which |
+        | `unauthenticated` | 401 | The signature is missing, malformed or wrong, or the member is unknown |
+        | `clockSkew` | 401 | `time` is more than 300 seconds from the server's clock |
+        | `replayed` | 401 | This exact signature was already accepted |
+        | `inviteInvalid` | 403 | The invite code is not the board's current one |
+        | `passwordIncorrect` | 403 | The board's password is missing or wrong |
+        | `blocked` | 403 | The admin blocked this member from joining again |
+        | `memberLimitReached` | 403 | The board has 1,000 members, its limit; try again after the admin removes some |
+        | `pendingLimitReached` | 403 | As many requests are waiting for approval as the board allows; try again later |
+        | `memberPending` | 403 | The membership is waiting for the admin |
+        | `notPermitted` | 403 | The admin has not allowed this member to approve requests |
+        | `avatarsNotAllowed` | 403 | The board does not take avatars |
+        | `routesNotShared` | 403 | The member's effective sharing has no routes |
+        | `notFound` | 404 | No such member, weekly challenge, activity, route or avatar |
+        | `unknownOperation` | 404 | The server does not serve this method and path, such as one a newer version added |
+        | `payloadTooLarge` | 413 | The body is over its limit, or the weekly challenge would store more than 1 MB |
+        | `unsupportedMediaType` | 415 | The body is not a type this operation takes |
+        | `imageInvalid` | 422 | The avatar could not be decoded |
+        | `weekOutOfRange` | 422 | The week is not on the board's start day, too old to keep, or after next week |
+        | `upgradeRequired` | 403 | The board no longer serves this client's version; the app needs updating. The 1.0 server never sends it |
+        | `rateLimited` | 429 | Too many requests from this address; see `Retry-After` |
+        | `internal` | 500 | The server failed |
+        | `unavailable` | 503 | The server or its store cannot serve the board for now |
+
+        Codes are an open vocabulary like any other: a client treats one it does not know by its status.
+      type: object
+      required: [code, status, title]
+      properties:
+        code:
+          type: string
+        status:
+          type: integer
+        title:
+          type: string
+        detail:
+          type: string
+      example:
+        code: clockSkew
+        status: 401
+        title: Clock skew
+        detail: The request's time is 412 seconds behind the server's.

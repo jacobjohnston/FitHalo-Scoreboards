@@ -1,0 +1,431 @@
+{
+  "version": 1,
+  "description": "The known values of the API's open vocabularies, with English names for people reading the spec. Clients show their own localized names. A value missing from a list is shown generically, never refused, so a newer client can send a type an older server or viewer has not heard of. Values are never renamed or reused; a list only grows.",
+  "activityTypes": {
+    "description": "Activity.type. The slugs are FitHalo's workout type keys. unknown is a workout whose type FitHalo has no name for, such as one another app recorded.",
+    "values": [
+      {
+        "slug": "outdoorRucking",
+        "name": "Outdoor rucking"
+      },
+      {
+        "slug": "outdoorWeightedVests",
+        "name": "Outdoor weighted vest"
+      },
+      {
+        "slug": "outdoorRunning",
+        "name": "Outdoor running"
+      },
+      {
+        "slug": "outdoorWalking",
+        "name": "Outdoor walking"
+      },
+      {
+        "slug": "outdoorCycling",
+        "name": "Outdoor cycling"
+      },
+      {
+        "slug": "hiking",
+        "name": "Hiking"
+      },
+      {
+        "slug": "indoorRucking",
+        "name": "Indoor rucking"
+      },
+      {
+        "slug": "indoorWeightedVests",
+        "name": "Indoor weighted vest"
+      },
+      {
+        "slug": "indoorRunning",
+        "name": "Indoor running"
+      },
+      {
+        "slug": "indoorWalking",
+        "name": "Indoor walking"
+      },
+      {
+        "slug": "indoorCycling",
+        "name": "Indoor cycling"
+      },
+      {
+        "slug": "pickleball",
+        "name": "Pickleball"
+      },
+      {
+        "slug": "traditionalStrengthTraining",
+        "name": "Traditional strength training"
+      },
+      {
+        "slug": "functionalStrengthTraining",
+        "name": "Functional strength training"
+      },
+      {
+        "slug": "strollerWalk",
+        "name": "Stroller walk"
+      },
+      {
+        "slug": "strollerRun",
+        "name": "Stroller run"
+      },
+      {
+        "slug": "sauna",
+        "name": "Sauna"
+      },
+      {
+        "slug": "coldPlunge",
+        "name": "Cold plunge"
+      },
+      {
+        "slug": "crossTraining",
+        "name": "Cross training"
+      },
+      {
+        "slug": "martialArts",
+        "name": "Martial arts"
+      },
+      {
+        "slug": "taiChi",
+        "name": "Tai chi"
+      },
+      {
+        "slug": "yoga",
+        "name": "Yoga"
+      },
+      {
+        "slug": "walkingPad",
+        "name": "Walking pad"
+      },
+      {
+        "slug": "indoorRowing",
+        "name": "Indoor rowing"
+      },
+      {
+        "slug": "outdoorRowing",
+        "name": "Outdoor rowing"
+      },
+      {
+        "slug": "coreTraining",
+        "name": "Core training"
+      },
+      {
+        "slug": "pilates",
+        "name": "Pilates"
+      },
+      {
+        "slug": "highIntensityIntervalTraining",
+        "name": "High intensity interval training"
+      },
+      {
+        "slug": "jumpRope",
+        "name": "Jump rope"
+      },
+      {
+        "slug": "tennis",
+        "name": "Tennis"
+      },
+      {
+        "slug": "basketball",
+        "name": "Basketball"
+      },
+      {
+        "slug": "soccer",
+        "name": "Soccer"
+      },
+      {
+        "slug": "golf",
+        "name": "Golf"
+      },
+      {
+        "slug": "volleyball",
+        "name": "Volleyball"
+      },
+      {
+        "slug": "elliptical",
+        "name": "Elliptical"
+      },
+      {
+        "slug": "stairClimbing",
+        "name": "Stair climbing"
+      },
+      {
+        "slug": "stairs",
+        "name": "Stairs"
+      },
+      {
+        "slug": "boxing",
+        "name": "Boxing"
+      },
+      {
+        "slug": "kickboxing",
+        "name": "Kickboxing"
+      },
+      {
+        "slug": "wrestling",
+        "name": "Wrestling"
+      },
+      {
+        "slug": "gymnastics",
+        "name": "Gymnastics"
+      },
+      {
+        "slug": "archery",
+        "name": "Archery"
+      },
+      {
+        "slug": "fencing",
+        "name": "Fencing"
+      },
+      {
+        "slug": "barre",
+        "name": "Barre"
+      },
+      {
+        "slug": "flexibility",
+        "name": "Flexibility"
+      },
+      {
+        "slug": "preparationAndRecovery",
+        "name": "Preparation and recovery"
+      },
+      {
+        "slug": "cooldown",
+        "name": "Cooldown"
+      },
+      {
+        "slug": "mindAndBody",
+        "name": "Mind and body"
+      },
+      {
+        "slug": "mixedCardio",
+        "name": "Mixed cardio"
+      },
+      {
+        "slug": "fitnessGaming",
+        "name": "Fitness gaming"
+      },
+      {
+        "slug": "play",
+        "name": "Play"
+      },
+      {
+        "slug": "socialDance",
+        "name": "Social dance"
+      },
+      {
+        "slug": "cardioDance",
+        "name": "Cardio dance"
+      },
+      {
+        "slug": "waterFitness",
+        "name": "Water fitness"
+      },
+      {
+        "slug": "waterPolo",
+        "name": "Water polo"
+      },
+      {
+        "slug": "curling",
+        "name": "Curling"
+      },
+      {
+        "slug": "fishing",
+        "name": "Fishing"
+      },
+      {
+        "slug": "americanFootball",
+        "name": "American football"
+      },
+      {
+        "slug": "australianFootball",
+        "name": "Australian football"
+      },
+      {
+        "slug": "rugby",
+        "name": "Rugby"
+      },
+      {
+        "slug": "lacrosse",
+        "name": "Lacrosse"
+      },
+      {
+        "slug": "handball",
+        "name": "Handball"
+      },
+      {
+        "slug": "iceHockey",
+        "name": "Ice hockey"
+      },
+      {
+        "slug": "fieldHockey",
+        "name": "Field hockey"
+      },
+      {
+        "slug": "badminton",
+        "name": "Badminton"
+      },
+      {
+        "slug": "baseball",
+        "name": "Baseball"
+      },
+      {
+        "slug": "softball",
+        "name": "Softball"
+      },
+      {
+        "slug": "cricket",
+        "name": "Cricket"
+      },
+      {
+        "slug": "squash",
+        "name": "Squash"
+      },
+      {
+        "slug": "racquetball",
+        "name": "Racquetball"
+      },
+      {
+        "slug": "tableTennis",
+        "name": "Table tennis"
+      },
+      {
+        "slug": "discSports",
+        "name": "Disc sports"
+      },
+      {
+        "slug": "trackAndField",
+        "name": "Track and field"
+      },
+      {
+        "slug": "bowling",
+        "name": "Bowling"
+      },
+      {
+        "slug": "stepTraining",
+        "name": "Step training"
+      },
+      {
+        "slug": "hunting",
+        "name": "Hunting"
+      },
+      {
+        "slug": "sailing",
+        "name": "Sailing"
+      },
+      {
+        "slug": "surfingSports",
+        "name": "Surfing sports"
+      },
+      {
+        "slug": "skatingSports",
+        "name": "Skating sports"
+      },
+      {
+        "slug": "indoorClimbing",
+        "name": "Indoor climbing"
+      },
+      {
+        "slug": "outdoorClimbing",
+        "name": "Outdoor climbing"
+      },
+      {
+        "slug": "crossCountrySkiing",
+        "name": "Cross country skiing"
+      },
+      {
+        "slug": "handCycling",
+        "name": "Hand cycling"
+      },
+      {
+        "slug": "equestrianSports",
+        "name": "Equestrian sports"
+      },
+      {
+        "slug": "poolSwimming",
+        "name": "Pool swimming"
+      },
+      {
+        "slug": "openWaterSwimming",
+        "name": "Open water swimming"
+      },
+      {
+        "slug": "unknown",
+        "name": "Other workout"
+      }
+    ]
+  },
+  "setTypes": {
+    "description": "StrengthSet.type, in the order a session is programmed.",
+    "values": [
+      {
+        "slug": "warmup",
+        "name": "Warm-Up"
+      },
+      {
+        "slug": "normal",
+        "name": "Normal"
+      },
+      {
+        "slug": "failure",
+        "name": "Failure"
+      },
+      {
+        "slug": "myo",
+        "name": "Myo Reps"
+      },
+      {
+        "slug": "dropset",
+        "name": "Drop Set"
+      },
+      {
+        "slug": "isometric",
+        "name": "Isometric"
+      }
+    ]
+  },
+  "tiers": {
+    "description": "A weekly challenge's tier, from the lowest goal to the highest.",
+    "values": [
+      {
+        "slug": "beginner",
+        "name": "Beginner"
+      },
+      {
+        "slug": "medium",
+        "name": "Medium"
+      },
+      {
+        "slug": "demanding",
+        "name": "Demanding"
+      },
+      {
+        "slug": "extreme",
+        "name": "Extreme"
+      },
+      {
+        "slug": "bringIt",
+        "name": "Bring It!"
+      },
+      {
+        "slug": "monster",
+        "name": "Monster"
+      },
+      {
+        "slug": "demigod",
+        "name": "Demigod"
+      },
+      {
+        "slug": "titan",
+        "name": "Titan"
+      },
+      {
+        "slug": "celestial",
+        "name": "Celestial"
+      },
+      {
+        "slug": "deity",
+        "name": "Deity"
+      }
+    ]
+  }
+}

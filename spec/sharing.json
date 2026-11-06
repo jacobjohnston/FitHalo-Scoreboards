@@ -1,0 +1,347 @@
+{
+  "version": 1,
+  "description": "All weekly challenge data and the sharing it needs. A field is allowed when every entry in its requires holds: score and activity at least the level named, in the order given by levels; routes, strengthSets and strengthWeights true. An object or array is allowed when anything beneath it is. A client never sends a field it is not allowed; a server strips any it receives and never serves one. A field missing from this file is allowed at no level, so adding a field to a weekly challenge means adding it here.",
+  "levels": {
+    "score": [
+      "progress",
+      "score",
+      "details"
+    ],
+    "activity": [
+      "none",
+      "points",
+      "summary",
+      "full"
+    ]
+  },
+  "fields": [
+    {
+      "path": "progress",
+      "requires": {}
+    },
+    {
+      "path": "updatedAt",
+      "requires": {}
+    },
+    {
+      "path": "score",
+      "requires": {
+        "score": "score"
+      }
+    },
+    {
+      "path": "goal",
+      "requires": {
+        "score": "score"
+      }
+    },
+    {
+      "path": "tier",
+      "requires": {
+        "score": "score"
+      }
+    },
+    {
+      "path": "breakdown.exercise",
+      "requires": {
+        "score": "details"
+      }
+    },
+    {
+      "path": "breakdown.dailyBonus",
+      "requires": {
+        "score": "details"
+      }
+    },
+    {
+      "path": "breakdown.varietyBonus",
+      "requires": {
+        "score": "details"
+      }
+    },
+    {
+      "path": "activities[].id",
+      "requires": {
+        "score": "details",
+        "activity": "points"
+      }
+    },
+    {
+      "path": "activities[].type",
+      "requires": {
+        "score": "details",
+        "activity": "points"
+      }
+    },
+    {
+      "path": "activities[].day",
+      "requires": {
+        "score": "details",
+        "activity": "points"
+      }
+    },
+    {
+      "path": "activities[].points.base",
+      "requires": {
+        "score": "details",
+        "activity": "points"
+      }
+    },
+    {
+      "path": "activities[].points.bonus",
+      "requires": {
+        "score": "details",
+        "activity": "points"
+      }
+    },
+    {
+      "path": "activities[].durationSeconds",
+      "requires": {
+        "score": "details",
+        "activity": "summary"
+      }
+    },
+    {
+      "path": "activities[].distanceMeters",
+      "requires": {
+        "score": "details",
+        "activity": "summary"
+      }
+    },
+    {
+      "path": "activities[].start",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.activeEnergyKilocalories",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.averageHeartRate",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.maximumHeartRate",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.averageSpeedMetersPerSecond",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.elevationGainMeters",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.elevationLossMeters",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.steps",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.averageCadence",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.averagePowerWatts",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.averageMETs",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.carriedLoadKilograms",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.inclinePercent",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.strollerLoadKilograms",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.exposureTemperatureCelsius",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.weather.temperatureCelsius",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.weather.humidityPercent",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].hasRoute",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "routes": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].catalogID",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].name",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].type",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].reps",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].durationSeconds",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].distanceMeters",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].right.reps",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].right.durationSeconds",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].clusters[].reps",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].loadIsAssistance",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true,
+        "strengthWeights": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].weightKilograms",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true,
+        "strengthWeights": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].right.weightKilograms",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true,
+        "strengthWeights": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].clusters[].weightKilograms",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true,
+        "strengthWeights": true
+      }
+    }
+  ]
+}

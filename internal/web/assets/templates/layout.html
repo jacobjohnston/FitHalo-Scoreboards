@@ -1,0 +1,50 @@
+{{/* The page shell every page renders into: head, header with tabs, notices, footer and scripts. */ -}}
+{{define "layout"}}<!doctype html>
+<html lang="{{.Language}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+{{if .CSRF}}<meta name="csrf" content="{{.CSRF}}">{{end}}
+<title>{{.Title}}</title>
+<link rel="icon" href="{{.Asset "logo.png"}}" type="image/png">
+<link rel="stylesheet" href="{{.Asset "style.css"}}">
+</head>
+<body>
+<header class="header">
+<div class="wrap header-inner">
+<a class="brand" href="{{.BasePath}}/"><span class="logo-tile"><img src="{{.Asset "logo.png"}}" alt=""></span><span>{{.BoardName}}</span></a>
+{{if .SignedIn}}
+<nav class="tabs" aria-label="{{.T "Nav_Label"}}">
+<a href="{{.BasePath}}/admin/board"{{if eq .Page "board"}} aria-current="page"{{end}}>{{.T "Nav_Board"}}</a>
+<a href="{{.BasePath}}/admin/members"{{if or (eq .Page "members") (eq .Page "details")}} aria-current="page"{{end}}>{{.T "Nav_Members"}}</a>
+<a href="{{.BasePath}}/admin/rules"{{if eq .Page "rules"}} aria-current="page"{{end}}>{{.T "Nav_Rules"}}</a>
+<a href="{{.BasePath}}/admin/account"{{if eq .Page "account"}} aria-current="page"{{end}}>{{.T "Nav_Account"}}</a>
+<form class="inline-form" method="post" action="{{.BasePath}}/admin/sign-out"><input type="hidden" name="csrf" value="{{.CSRF}}"><button type="submit">{{.T "Nav_SignOut"}}</button></form>
+</nav>
+{{end}}
+</div>
+</header>
+<main class="wrap">
+{{if .MemberLimitReached}}<p class="notice notice-error" role="alert">{{.T "Notice_MemberLimitReached"}}</p>{{end}}
+{{if .Notice}}<p class="notice notice-success" role="status">{{.Notice}}</p>{{end}}
+{{if .Error}}<p class="notice notice-error" role="alert">{{.Error}}</p>{{end}}
+{{template "content" .}}
+</main>
+<footer class="footer">
+<div class="wrap footer-inner">
+<span>{{.T "Footer_Tagline"}}</span>
+<form method="post" action="{{.BasePath}}/language">
+<input type="hidden" name="return" value="{{.Path}}">
+<label class="muted" for="language">{{.T "Footer_Language"}}</label>
+<select id="language" name="language">{{range .Languages}}<option value="{{.Code}}"{{if .Selected}} selected{{end}}>{{.Name}}</option>{{end}}</select>
+<button class="button button-small" type="submit">{{.T "Footer_Change"}}</button>
+</form>
+</div>
+</footer>
+{{if .Script}}<script src="{{.Asset "passkeys.js"}}" defer></script>{{end}}
+{{range .PageScripts}}<script src="{{$.Asset .}}" defer></script>
+{{end}}
+</body>
+</html>
+{{end}}

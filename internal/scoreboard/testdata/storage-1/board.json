@@ -1,0 +1,24 @@
+{
+  "id": "Ym9hcmQtZml4dHVyZS0xAA",
+  "name": "Fixture Gym",
+  "description": "A board as 1.0 stores it.",
+  "hasAvatar": true,
+  "weekStartDay": "monday",
+  "retentionWeeks": 52,
+  "joinMode": "approval",
+  "maximumPending": 10,
+  "passwordHash": "pbkdf2-sha256$600000$GcEuczR07vNGfbAXJ6VjJg$Mkr3qwRD7FVdTMoKasWIiwpofpZDegRikoZzT5utVwY",
+  "avatarsAllowed": true,
+  "maximumSharing": {
+    "score": "details",
+    "activity": "full",
+    "routes": true,
+    "strengthSets": true,
+    "strengthWeights": true
+  },
+  "ranking": "progress",
+  "inviteCode": "aW52aXRlLWZpeHR1cmUtMQA",
+  "landingMessage": "Welcome to the fixture.",
+  "showInvite": true,
+  "storageVersion": 1
+}

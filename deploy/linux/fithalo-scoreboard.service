@@ -1,0 +1,50 @@
+# The systemd unit that runs a FitHalo Scoreboard as its own user; install.sh installs it.
+
+# The board starts once the network is up.
+[Unit]
+Description=FitHalo Scoreboard
+Documentation=https://github.com/jacobjohnston/FitHalo-Scoreboards
+After=network-online.target
+Wants=network-online.target
+
+# The board runs from the configuration install.sh writes, and restarts if it fails.
+[Service]
+User=fithalo-scoreboard
+Group=fithalo-scoreboard
+EnvironmentFile=/etc/fithalo-scoreboard/environment
+ExecStart=/usr/local/bin/fithalo-scoreboard
+Restart=on-failure
+RestartSec=5
+
+# The board's data, and nothing else, is writable, and only by the board.
+StateDirectory=fithalo-scoreboard
+StateDirectoryMode=0700
+UMask=0077
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+# No capabilities; in files mode install.sh adds CAP_NET_BIND_SERVICE for port 443 in a drop-in.
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# Starts the board at boot once enabled.
+[Install]
+WantedBy=multi-user.target

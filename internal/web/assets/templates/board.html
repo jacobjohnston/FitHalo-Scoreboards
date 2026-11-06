@@ -1,0 +1,39 @@
+{{/* The Board page: the invite link and QR code, and the board's name, avatar and messages. */ -}}
+{{define "content"}}
+<h1 class="display">{{.T "Nav_Board"}}</h1>
+<div class="stack">
+<section class="app-card">
+<h2 class="section-title">{{.T "Board_Invite"}}</h2>
+<div class="invite">
+<div class="qr">{{.Data.QR}}</div>
+<div class="form">
+<p>{{.T "Board_InviteHint"}}</p>
+<label class="field"><span>{{.T "Board_InviteLink"}}</span><input class="link-field" type="text" value="{{.Data.InviteLink}}" readonly></label>
+<div class="actions">
+<a class="button button-small" href="{{.BasePath}}/admin/invite.svg" download>{{.T "Board_DownloadQR"}}</a>
+<form class="inline-form" method="post" action="{{.BasePath}}/admin/board/invite"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="button button-small button-danger" type="submit">{{.T "Board_ReplaceInvite"}}</button></form>
+</div>
+<p class="hint">{{.T "Board_ReplaceInviteHint"}}</p>
+</div>
+</div>
+</section>
+<form class="app-card form" method="post" action="{{.BasePath}}/admin/board" enctype="multipart/form-data">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<h2 class="section-title">{{.T "Board_Details"}}</h2>
+<label class="field"><span>{{.T "Board_Name"}}</span><input type="text" name="name" maxlength="60" value="{{.Board.Name}}" required></label>
+<div class="field"><span>{{.T "Board_Avatar"}}</span>
+<div class="avatar-field">
+<div class="board-avatar" data-avatar-preview>{{if .Board.HasAvatar}}<img src="{{.BasePath}}/api/v1/board/avatar{{with index .Data "AvatarVersion"}}?v={{.}}{{end}}" alt="">{{end}}</div>
+<div class="avatar-controls">
+<input type="file" name="avatar" accept="image/jpeg,image/png" aria-label="{{.T "Board_Avatar"}}" data-avatar-input>
+{{if .Board.HasAvatar}}<label class="choice"><input type="checkbox" name="removeAvatar" value="on"><span>{{.T "Board_RemoveAvatar"}}</span></label>{{end}}
+</div>
+</div>
+<span class="hint">{{.T "Board_AvatarHint"}}</span></div>
+<label class="field"><span>{{.T "Board_Description"}}</span><textarea name="description" maxlength="500">{{.Board.Description}}</textarea></label>
+<label class="field"><span>{{.T "Board_LandingMessage"}}</span><input type="text" name="landingMessage" maxlength="140" value="{{.Board.LandingMessage}}" placeholder="{{.Data.DefaultMessage}}"><span class="hint">{{.T "Board_LandingMessageHint"}}</span></label>
+<label class="choice"><input type="checkbox" name="showInvite" value="on"{{if .Board.ShowInvite}} checked{{end}}><span>{{.T "Board_ShowInvite"}}</span></label>
+<div class="actions"><button class="button button-accent" type="submit">{{.T "Common_Save"}}</button></div>
+</form>
+</div>
+{{end}}

@@ -1,0 +1,33 @@
+{{/* The first-run setup page: the setup code, board name, and the admin's account. */ -}}
+{{define "content"}}
+<h1 class="display">{{.T "Setup_Title"}}</h1>
+<p class="lead">{{.T "Setup_Intro"}}</p>
+<div class="stack">
+<form class="app-card form" method="post" action="{{.BasePath}}/admin/setup">
+<div class="field">
+<div class="field-label"><label for="setup-code">{{.T "Setup_Code"}}</label><button class="info-button" type="button" popovertarget="setup-code-help" aria-label="{{.T "Setup_CodeHelpLabel"}}">?</button></div>
+<input id="setup-code" type="text" name="code" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+</div>
+<div class="field">
+<div class="field-label"><label for="board-name">{{.T "Setup_BoardName"}}</label><button class="info-button" type="button" popovertarget="board-name-help" aria-label="{{.T "Setup_BoardNameHelpLabel"}}">?</button></div>
+<input id="board-name" type="text" name="boardName" maxlength="60" value="{{.Data.BoardName}}" required>
+</div>
+<hr class="form-divider">
+<h2 class="section-title">{{.T "Setup_AccountHeading"}}</h2>
+{{template "breach-callout" .}}
+<label class="field"><span>{{.T "Common_Username"}}</span><input type="text" name="username" autocomplete="username" maxlength="64" value="{{.Data.Username}}" required></label>
+{{template "new-password" .}}
+<div class="actions"><button class="button button-accent" type="submit">{{.T "Setup_Submit"}}</button></div>
+</form>
+<div id="setup-code-help" class="info-popover" popover>
+<h2>{{.T "Setup_WhereTitle"}}</h2>
+<p>{{.T "Setup_WhereIntro"}}</p>
+<button class="button button-small" type="button" popovertarget="setup-code-help" popovertargetaction="hide">{{.T "Common_Close"}}</button>
+</div>
+<div id="board-name-help" class="info-popover" popover>
+<h2>{{.T "Setup_BoardName"}}</h2>
+<p>{{.T "Setup_BoardNameHelp"}}</p>
+<button class="button button-small" type="button" popovertarget="board-name-help" popovertargetaction="hide">{{.T "Common_Close"}}</button>
+</div>
+</div>
+{{end}}

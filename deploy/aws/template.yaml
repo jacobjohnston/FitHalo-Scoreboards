@@ -1,0 +1,175 @@
+# CloudFormation template for a FitHalo Scoreboard on AWS, deployed by deploy-aws.sh.
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  A FitHalo Scoreboard on AWS's always-free tier: a Lambda function behind a function URL, and a DynamoDB
+  table provisioned inside the free 25 capacity units. Deploy it with deploy-aws.sh from AWS CloudShell.
+
+Parameters:
+  CodeBucket:
+    Type: String
+    Description: The bucket deploy-aws.sh uploaded the function's code to. Lambda keeps its own copy.
+  CodeKey:
+    Type: String
+    Description: The code's key in that bucket.
+  SetupCode:
+    Type: String
+    NoEcho: true
+    MinLength: 16
+    Description: The code that creates the board's admin at /admin/setup.
+  Pepper:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: A secret mixed into password hashes, kept apart from the data. deploy-aws.sh makes one.
+  PublicURL:
+    Type: String
+    Default: ""
+    Description: The board's address if it has a domain of its own. Empty uses the function URL.
+  BudgetEmail:
+    Type: String
+    Default: ""
+    Description: Where to send an alert if the account's spending passes one dollar in a month.
+
+Conditions:
+  # HasBudgetEmail is true when a budget alert has somewhere to go.
+  HasBudgetEmail:
+    Fn::Not:
+      - Fn::Equals: [{Ref: BudgetEmail}, ""]
+
+Resources:
+  # The board's one table, kept when the stack is deleted or the table replaced.
+  Table:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BillingMode: PROVISIONED
+      AttributeDefinitions:
+        - {AttributeName: c, AttributeType: S}
+        - {AttributeName: i, AttributeType: S}
+      KeySchema:
+        - {AttributeName: c, KeyType: HASH}
+        - {AttributeName: i, KeyType: RANGE}
+      ProvisionedThroughput:
+        ReadCapacityUnits: 10
+        WriteCapacityUnits: 10
+
+  # The function's role: writing its logs, and reading and writing the board's table alone.
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: board-table
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem, dynamodb:DeleteItem, dynamodb:Query]
+                Resource: {"Fn::GetAtt": [Table, Arn]}
+
+  # The function's log group, made before the function so its one-week retention applies.
+  Logs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: {"Fn::Sub": "/aws/lambda/${AWS::StackName}"}
+      RetentionInDays: 7
+
+  # The board: the arm64 binary on Lambda's OS-only runtime.
+  Function:
+    Type: AWS::Lambda::Function
+    DependsOn: Logs
+    Properties:
+      FunctionName: {Ref: AWS::StackName}
+      Runtime: provided.al2023
+      Architectures: [arm64]
+      Handler: bootstrap
+      MemorySize: 128
+      Timeout: 30
+      Role: {"Fn::GetAtt": [Role, Arn]}
+      Code:
+        S3Bucket: {Ref: CodeBucket}
+        S3Key: {Ref: CodeKey}
+      Environment:
+        Variables:
+          SCOREBOARD_DYNAMODB_TABLE: {Ref: Table}
+          SCOREBOARD_SETUP_CODE: {Ref: SetupCode}
+          SCOREBOARD_PEPPER: {Ref: Pepper}
+          SCOREBOARD_PUBLIC_URL: {Ref: PublicURL}
+
+  # The function's public HTTPS address; the board does its own sign-in.
+  FunctionURL:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: {"Fn::GetAtt": [Function, Arn]}
+      AuthType: NONE
+
+  # Lets anyone call the function URL.
+  PublicInvokeURL:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: {Ref: Function}
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  # Lets anyone invoke the function, only through its URL, which a public function URL also needs.
+  PublicInvokeThroughURL:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: {Ref: Function}
+      Action: lambda:InvokeFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
+
+  Hourly:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Deletes weekly challenges older than the board keeps, ended sign-ins and old nonces.
+      ScheduleExpression: rate(1 hour)
+      Targets:
+        - Id: sweep
+          Arn: {"Fn::GetAtt": [Function, Arn]}
+
+  # Lets the hourly rule invoke the function.
+  HourlyInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: {Ref: Function}
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: {"Fn::GetAtt": [Hourly, Arn]}
+
+  # A one-dollar monthly cost budget that emails BudgetEmail once actual spending passes it.
+  Budget:
+    Type: AWS::Budgets::Budget
+    Condition: HasBudgetEmail
+    Properties:
+      Budget:
+        BudgetName: {"Fn::Sub": "${AWS::StackName}-one-dollar"}
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit: {Amount: 1, Unit: USD}
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - {SubscriptionType: EMAIL, Address: {Ref: BudgetEmail}}
+
+Outputs:
+  BoardURL:
+    Description: The board's address.
+    Value: {"Fn::GetAtt": [FunctionURL, FunctionUrl]}
+  Table:
+    Description: The table that holds the board. Deleting the stack keeps it.
+    Value: {Ref: Table}

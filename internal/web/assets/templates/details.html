@@ -1,0 +1,27 @@
+{{/* The Details page: one member, whether they may approve requests, and what they store for each weekly challenge. */ -}}
+{{define "content"}}
+<h1 class="display">{{.T "Details_Title"}}</h1>
+<div class="stack">
+<section class="app-card">
+<h2 class="section-title">{{.Data.Name}}</h2>
+<p class="row-detail">{{.Data.Joined}} · {{.Data.Sharing}}</p>
+{{if .Data.IsActive}}<form class="form spaced" method="post" action="{{.BasePath}}/admin/members/{{.Data.ID}}/can-approve">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<label class="choice"><input type="checkbox" name="canApproveMembers" value="on"{{if .Data.CanApproveMembers}} checked{{end}}><span>{{.T "Details_CanApprove"}}</span></label>
+<span class="hint">{{.T "Details_CanApproveHint"}}</span>
+<div class="actions"><button class="button button-accent" type="submit">{{.T "Common_Save"}}</button></div>
+</form>{{end}}
+</section>
+<section class="app-card">
+<h2 class="section-title">{{.T "Usage_Heading" "name" .Data.Name}}</h2>
+<p>{{.Data.Summary}}</p>
+<p class="row-detail">{{.Data.Avatar}}</p>
+{{if .Data.Challenges}}<ul class="rows spaced">{{range .Data.Challenges}}
+<li class="row"><div class="row-main"><div class="row-title">{{.Week}}</div><div class="row-detail">{{.Detail}}</div></div>
+<div class="usage-share"><meter class="usage-meter" min="0" max="100" value="{{.Percent}}">{{.Share}}</meter><span class="row-detail">{{.Share}}</span></div></li>{{end}}
+</ul>{{else}}<p class="muted spaced">{{.T "Usage_None"}}</p>{{end}}
+<p class="hint spaced">{{.T "Usage_Hint"}}</p>
+</section>
+<div class="actions"><a class="button button-small" href="{{.BasePath}}/admin/members">{{.T "Details_Back"}}</a></div>
+</div>
+{{end}}

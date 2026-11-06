@@ -1,0 +1,37 @@
+{{/* The Account page: passkeys, password sign-in on or off, and changing the password. */ -}}
+{{define "content"}}
+<h1 class="display">{{.T "Nav_Account"}}</h1>
+<div class="stack">
+<section class="app-card form">
+<h2 class="section-title">{{.T "Account_Passkeys"}}</h2>
+{{if .Data.Passkeys}}<ul class="rows">{{range .Data.Passkeys}}
+<li class="row"><div class="row-main"><div class="actions">
+<form class="actions grow" method="post" action="{{$.BasePath}}/admin/account/passkeys/{{.ID}}/rename"><input type="hidden" name="csrf" value="{{$.CSRF}}">
+<input type="text" name="name" maxlength="60" value="{{.Name}}" aria-label="{{$.T "Account_PasskeyName"}}" class="grow"><button class="button button-small" type="submit">{{$.T "Account_Rename"}}</button></form>
+<form class="inline-form" method="post" action="{{$.BasePath}}/admin/account/passkeys/{{.ID}}/delete"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="button button-small button-danger" type="submit">{{$.T "Account_Remove"}}</button></form></div>
+<div class="row-detail">{{.Detail}}</div></div></li>{{end}}
+</ul>{{else}}<p class="muted">{{.T "Account_NoPasskeys"}}</p>{{end}}
+<label class="field"><span>{{.T "Account_NewPasskeyName"}}</span><input type="text" id="passkey-name" maxlength="60" placeholder="{{.T "Account_NewPasskeyPlaceholder"}}"></label>
+<div class="actions"><button class="button button-accent" type="button" data-passkey="register" data-name-field="passkey-name"
+ data-begin="{{.BasePath}}/admin/account/passkeys/begin" data-finish="{{.BasePath}}/admin/account/passkeys/finish"
+ data-message="passkey-message" data-failed="{{.T "Account_PasskeyFailed"}}" data-unsupported="{{.T "Passkey_Unsupported"}}">{{.T "Account_AddPasskey"}}</button></div>
+<p class="notice notice-error" id="passkey-message" role="alert" hidden></p>
+</section>
+<form class="app-card form" method="post" action="{{.BasePath}}/admin/account/password-enabled">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<h2 class="section-title">{{.T "Account_PasswordSignIn"}}</h2>
+<p>{{if .Data.PasswordEnabled}}{{.T "Account_PasswordIsOn"}}{{else}}{{.T "Account_PasswordIsOff"}}{{end}}</p>
+<p class="hint">{{.T "Account_PasswordOffHint"}}</p>
+<div class="actions">{{if .Data.PasswordEnabled}}<button class="button" type="submit" name="enabled" value="off">{{.T "Account_TurnOff"}}</button>{{else}}<button class="button button-accent" type="submit" name="enabled" value="on">{{.T "Account_TurnOn"}}</button>{{end}}</div>
+</form>
+<form class="app-card form" method="post" action="{{.BasePath}}/admin/account/password">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<h2 class="section-title">{{.T "Account_ChangePassword"}}</h2>
+{{template "breach-callout" .}}
+<input type="text" name="username" autocomplete="username" value="{{.Data.Username}}" hidden>
+<label class="field"><span>{{.T "Account_CurrentPassword"}}</span><input type="password" name="current" autocomplete="current-password" required></label>
+{{template "new-password" .}}
+<div class="actions"><button class="button button-accent" type="submit">{{.T "Account_ChangePassword"}}</button></div>
+</form>
+</div>
+{{end}}

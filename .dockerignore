@@ -1,0 +1,92 @@
+# Paths kept out of the Docker build context; patterns match from the root, so ** reaches nested files.
+
+# Repository history and files the image build does not read
+.git
+.github
+docs
+deploy
+Dockerfile
+compose.yaml
+release
+
+# Build output: a local build, release artifacts, and other build directories
+fithalo-scoreboard
+dist
+bin
+build
+
+# A board run from the repository for development
+data
+
+# Go binaries, test binaries, and plugins
+**/*.exe
+**/*.exe~
+**/*.dll
+**/*.so
+**/*.dylib
+**/*.test
+
+# Coverage profiles, profiles, and other test artifacts
+**/*.out
+**/coverage.*
+!**/coverage.go
+**/*.coverprofile
+**/profile.cov
+**/*.prof
+**/*.pprof
+
+# Go workspace and vendored dependencies
+go.work
+go.work.sum
+vendor
+
+# Environment files and local secrets
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+
+# Logs and temporary files
+**/*.log
+**/*.tmp
+**/tmp
+
+# macOS
+**/.DS_Store
+**/.AppleDouble
+**/.LSOverride
+**/._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+
+# Windows
+**/Thumbs.db
+**/ehthumbs.db
+**/desktop.ini
+$RECYCLE.BIN
+
+# Linux
+**/.directory
+.Trash-*
+
+# Dropbox metadata and conflicted copies
+**/.dropbox
+**/.dropbox.attr
+.dropbox.cache
+**/*conflicted copy*
+
+# Editors and IDEs
+.idea
+.vscode
+.fleet
+.zed
+**/*.iml
+**/*.swp
+**/*.swo
+**/*~
+**/#*#
+**/.#*
+
+# Claude Code settings
+.claude

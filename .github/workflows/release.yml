@@ -1,0 +1,164 @@
+# Publishes a release when a version tag is pushed: `git tag v1.0.0 && git push origin v1.0.0`.
+# A tag with a hyphen (v1.0.0-beta.1) is a prerelease: it moves neither GitHub's latest release nor
+# the image's latest tag, so the deploy scripts keep the last full release.
+# Attestation steps skip themselves while the repository is private (GitHub offers attestations
+# there only with Enterprise Cloud).
+# Actions are pinned to commit SHAs, with the version in a comment. Protect the v* tags in the
+# repository's rulesets, since anyone who can push a tag can publish a release.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+
+# Read-only by default; each job asks for what it writes.
+permissions:
+  contents: read
+
+# One release run per tag at a time, never cancelled midway.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # GO_VERSION is the Go release that builds the binaries.
+  GO_VERSION: "1.27.x"
+
+jobs:
+  # Builds the container for amd64 and arm64, pushes it to ghcr.io, and attests it there.
+  image:
+    name: Build, attest and publish the image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      reference: ${{ steps.build.outputs.reference }}
+    steps:
+      # Checks out the tagged commit.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Name the image and its tags
+        id: image
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # The trigger already filters tags; this refuses anything else before it reaches a command.
+          if ! printf '%s\n' "$version" | grep -Eqx '[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?'; then
+            echo "::error::The tag ${GITHUB_REF_NAME} is not a version such as v1.0.0 or v1.0.0-beta.1."
+            exit 1
+          fi
+          owner=$(echo "$GITHUB_REPOSITORY_OWNER" | tr 'A-Z' 'a-z')
+          name="ghcr.io/${owner}/fithalo-scoreboards"
+          tags="--tag ${name}:${version}"
+          case "$version" in
+            *-*) ;;
+            *) tags="${tags} --tag ${name}:latest" ;;
+          esac
+          echo "name=${name}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tags=${tags}" >> "$GITHUB_OUTPUT"
+
+      - name: Sign in to the GitHub container registry
+        env:
+          TOKEN: ${{ github.token }}
+        run: echo "$TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Build and push for amd64 and arm64
+        id: build
+        env:
+          NAME: ${{ steps.image.outputs.name }}
+          VERSION: ${{ steps.image.outputs.version }}
+          TAGS: ${{ steps.image.outputs.tags }}
+        run: |
+          docker buildx create --use --name release
+          # shellcheck disable=SC2086
+          docker buildx build --platform linux/amd64,linux/arm64 --build-arg "VERSION=${VERSION}" \
+            $TAGS --push --metadata-file metadata.json .
+          digest="$(jq -r '."containerimage.digest"' metadata.json)"
+          if ! printf '%s\n' "$digest" | grep -Eqx 'sha256:[0-9a-f]{64}'; then
+            echo "::error::The build reported no image digest."
+            exit 1
+          fi
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          echo "reference=${NAME}@${digest}" >> "$GITHUB_OUTPUT"
+
+      - name: Attest the image
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-name: ${{ steps.image.outputs.name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+  # Tests, builds every platform with ./release, attests the files, and attaches them to a release.
+  # It waits for the image, so the Azure template it ships names the image by digest.
+  files:
+    name: Build, attest and publish the files
+    needs: image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      # Checks out the tagged commit.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # Installs Go with no cache, so nothing cached by another run reaches a release.
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+
+      - name: Read the version from the tag
+        id: version
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          # The trigger already filters tags; this refuses anything else before it reaches a command.
+          if ! printf '%s\n' "$tag" | grep -Eqx 'v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?'; then
+            echo "::error::The tag ${tag} is not a version such as v1.0.0 or v1.0.0-beta.1."
+            exit 1
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+          case "$tag" in
+            *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Test and build every platform
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          IMAGE: ${{ needs.image.outputs.reference }}
+        run: ./release "$VERSION"
+
+      - name: Attest the files
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.yaml
+            dist/*.bicep
+            dist/*.sh
+            dist/SHA256SUMS
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          flags="--verify-tag --title $TAG --generate-notes"
+          if [ "$PRERELEASE" = true ]; then
+            flags="$flags --prerelease --latest=false"
+          fi
+          # shellcheck disable=SC2086
+          gh release create "$TAG" dist/*.tar.gz dist/*.zip dist/*.yaml dist/*.bicep dist/*.sh dist/SHA256SUMS $flags

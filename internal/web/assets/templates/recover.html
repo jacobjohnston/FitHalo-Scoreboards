@@ -1,0 +1,14 @@
+{{/* The recovery page: the recovery code and a new password. */ -}}
+{{define "content"}}
+<h1 class="display">{{.T "Recover_Title"}}</h1>
+<p class="lead">{{.T "Recover_Intro"}}</p>
+<div class="stack">
+<form class="app-card form" method="post" action="{{.BasePath}}/admin/recover">
+<label class="field"><span>{{.T "Recover_Code"}}</span><input type="password" name="code" autocomplete="off" required></label>
+{{template "breach-callout" .}}
+{{template "new-password" .}}
+<p class="hint">{{.T "Recover_PasskeysRemoved"}}</p>
+<div class="actions"><button class="button button-accent" type="submit">{{.T "Recover_Submit"}}</button></div>
+</form>
+</div>
+{{end}}

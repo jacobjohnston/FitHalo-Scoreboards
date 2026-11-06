@@ -1,0 +1,47 @@
+{{/* The Rules page: joining, the weekly challenge start day, images, maximum sharing, ranking, retention, password. */ -}}
+{{define "content"}}
+<h1 class="display">{{.T "Nav_Rules"}}</h1>
+<div class="stack">
+<form class="app-card form" method="post" action="{{.BasePath}}/admin/rules">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<fieldset><legend class="group-title">{{.T "Rules_Joining"}}</legend>
+<label class="choice"><input type="radio" name="joinMode" value="approval"{{if eq .Board.JoinMode "approval"}} checked{{end}}><span>{{.T "Rules_JoinApproval"}}</span></label>
+<label class="choice"><input type="radio" name="joinMode" value="open"{{if eq .Board.JoinMode "open"}} checked{{end}}><span>{{.T "Rules_JoinOpen"}}</span></label>
+</fieldset>
+<label class="field"><span class="group-title">{{.T "Rules_MaximumPending"}}</span><input type="number" name="maximumPending" min="1" max="999" value="{{.Data.PendingLimit}}" required><span class="hint">{{.T "Rules_MaximumPendingHint"}}</span></label>
+<label class="field"><span class="group-title">{{.T "Rules_WeekStart"}}</span>
+<select name="weekStartDay" data-warn-on-change="week-start-warning">{{range .Data.Weekdays}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+<span class="hint change-warning" id="week-start-warning"><span class="warning-icon" aria-hidden="true">⚠&#xFE0E;</span><span>{{.T "Rules_WeekStartHint"}}</span></span></label>
+<fieldset><legend class="group-title">{{.T "Rules_Images"}}</legend>
+<label class="choice"><input type="checkbox" name="avatarsAllowed" value="on"{{if .Board.AvatarsAllowed}} checked{{end}}><span>{{.T "Rules_Avatars"}}</span></label>
+</fieldset>
+<fieldset data-sharing-options><legend class="group-title">{{.T "Rules_Maximum"}}</legend>
+<span class="hint">{{.T "Rules_MaximumHint"}}</span>
+<div class="columns">
+<label class="field"><span>{{.T "Rules_Score"}}</span><select name="score" data-sharing-score>{{range .Data.ScoreLevels}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>{{end}}</select></label>
+<label class="field"><span>{{.T "Rules_Activity"}}</span><select name="activity" data-sharing-activity>{{range .Data.ActivityLevels}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>{{end}}</select></label>
+</div>
+<label class="choice"><input type="checkbox" name="routes" value="on" data-sharing-option{{if .Board.MaximumSharing.Routes}} checked{{end}}><span>{{.T "Sharing_Routes"}}</span></label>
+<label class="choice"><input type="checkbox" name="strengthSets" value="on" data-sharing-option data-sharing-sets{{if .Board.MaximumSharing.StrengthSets}} checked{{end}}><span>{{.T "Sharing_StrengthSets"}}</span></label>
+<label class="choice"><input type="checkbox" name="strengthWeights" value="on" data-sharing-weights{{if .Board.MaximumSharing.StrengthWeights}} checked{{end}}><span>{{.T "Sharing_StrengthWeights"}}</span></label>
+</fieldset>
+<fieldset><legend class="group-title">{{.T "Rules_Ranking"}}</legend>
+<label class="choice"><input type="radio" name="ranking" value="name"{{if eq .Board.Ranking "name"}} checked{{end}}><span>{{.T "Rules_RankName"}}</span></label>
+<label class="choice"><input type="radio" name="ranking" value="progress"{{if eq .Board.Ranking "progress"}} checked{{end}}><span>{{.T "Rules_RankProgress"}}</span></label>
+</fieldset>
+<label class="field"><span class="group-title">{{.T "Rules_Retention"}}</span><input type="number" name="retentionWeeks" min="1" max="520" value="{{.Board.RetentionWeeks}}" required><span class="hint">{{.T "Rules_RetentionHint"}}</span></label>
+<div class="actions"><button class="button button-accent" type="submit">{{.T "Common_Save"}}</button></div>
+</form>
+<form class="app-card form" method="post" action="{{.BasePath}}/admin/rules/password">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<h2 class="section-title">{{.T "Rules_Password"}}</h2>
+<p>{{if .Data.PasswordSet}}{{.T "Rules_PasswordSet"}}{{else}}{{.T "Rules_PasswordNone"}}{{end}}</p>
+<p class="hint">{{.T "Rules_PasswordHint"}}</p>
+<label class="field"><span>{{.T "Common_NewPassword"}}</span><input type="password" name="password" autocomplete="off" minlength="8" maxlength="256"><span class="hint">{{.T "Common_PasswordHint"}}</span></label>
+<div class="actions">
+<button class="button button-accent" type="submit" name="action" value="set">{{.T "Rules_SetPassword"}}</button>
+{{if .Data.PasswordSet}}<button class="button button-danger" type="submit" name="action" value="remove" formnovalidate>{{.T "Rules_RemovePassword"}}</button>{{end}}
+</div>
+</form>
+</div>
+{{end}}

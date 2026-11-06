@@ -1,0 +1,73 @@
+#!/bin/sh
+#
+# Builds a release into dist: a tarball per platform with the binary, systemd
+# unit and install script, the Lambda zip, the cloud templates and their deploy
+# scripts, SHA256SUMS, and the AWS upload bundle that holds the four files a
+# deploy from CloudShell needs.
+#
+#   ./release 1.0.0
+#   IMAGE=ghcr.io/owner/fithalo-scoreboards@sha256:... ./release 1.0.0
+#
+# IMAGE, when set, replaces the image the Azure template in dist deploys; the
+# release workflow sets it to the image it pushed, by digest.
+set -eu
+
+version="${1:-}"
+if ! printf '%s\n' "${version}" | grep -Eqx '[0-9A-Za-z][0-9A-Za-z.+-]*'; then
+  echo "Usage: ./release 1.0.0" >&2
+  exit 2
+fi
+image="${IMAGE:-}"
+if [ -n "${image}" ] \
+  && ! printf '%s\n' "${image}" | grep -Eqx '[a-z0-9.-]+(/[a-z0-9._-]+)+@sha256:[0-9a-f]{64}'; then
+  echo "IMAGE must name an image by digest, such as ghcr.io/owner/name@sha256:..." >&2
+  exit 2
+fi
+cd "$(dirname "$0")"
+go vet ./...
+go test ./...
+
+# Emptied rather than replaced, so a sync tool's ignore flag on the folder survives.
+mkdir -p dist
+find dist -mindepth 1 -delete
+for target in linux/arm64 linux/amd64 linux/arm/7 darwin/arm64 darwin/amd64; do
+  os="$(echo "${target}" | cut -d/ -f1)"
+  architecture="$(echo "${target}" | cut -d/ -f2)"
+  arm="$(echo "${target}" | cut -s -d/ -f3)"
+  name="fithalo-scoreboard-${version}-${os}-${architecture}${arm:+v${arm}}"
+  mkdir "dist/${name}"
+  CGO_ENABLED=0 GOOS="${os}" GOARCH="${architecture}" GOARM="${arm}" \
+    go build -trimpath -ldflags "-s -w -X main.version=${version}" \
+    -o "dist/${name}/fithalo-scoreboard" ./cmd/fithalo-scoreboard
+  cp LICENSE NOTICE internal/web/assets/static/fonts/OFL.txt \
+    deploy/linux/fithalo-scoreboard.service deploy/linux/install.sh \
+    "dist/${name}/"
+  tar -C dist -czf "dist/${name}.tar.gz" "${name}"
+  rm -rf "dist/${name}"
+done
+
+# AWS Lambda: the arm64 binary named bootstrap, the template and its deploy
+# script. The names carry no version, so CloudShell can fetch the latest's.
+mkdir dist/lambda
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath \
+  -ldflags "-s -w -X main.version=${version}" \
+  -o dist/lambda/bootstrap ./cmd/fithalo-scoreboard
+(cd dist/lambda && zip -q -X ../fithalo-scoreboard-lambda-arm64.zip bootstrap)
+rm -rf dist/lambda
+cp deploy/aws/template.yaml dist/aws-template.yaml
+cp deploy/aws/deploy-aws.sh dist/deploy-aws.sh
+cp deploy/azure/template.bicep dist/azure-template.bicep
+if [ -n "${image}" ]; then
+  sed "s|^param image string = .*\$|param image string = '${image}'|" \
+    deploy/azure/template.bicep > dist/azure-template.bicep
+  grep -Fqx "param image string = '${image}'" dist/azure-template.bicep
+fi
+cp deploy/azure/deploy-azure.sh dist/deploy-azure.sh
+
+(cd dist && shasum -a 256 ./*.tar.gz ./*.zip ./*.yaml ./*.bicep ./*.sh > SHA256SUMS)
+
+# The AWS upload bundle: everything a deploy from CloudShell needs, in one file
+# to upload. It is made after SHA256SUMS, which it carries rather than joins.
+(cd dist && zip -q -X fithalo-scoreboard-aws-upload.zip \
+  deploy-aws.sh fithalo-scoreboard-lambda-arm64.zip aws-template.yaml SHA256SUMS)
+ls -l dist

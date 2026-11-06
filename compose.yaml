@@ -1,0 +1,28 @@
+# Docker Compose for a board behind a proxy or tunnel on the same machine, which terminates TLS and
+# forwards to port 8080 on loopback. See docs/docker.md for serving TLS from certificate files.
+services:
+  # The board, built from this directory and reachable only from this machine.
+  scoreboard:
+    build: .
+    image: fithalo-scoreboard
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      SCOREBOARD_PUBLIC_URL: https://board.example.com
+      SCOREBOARD_PEPPER_FILE: /run/secrets/pepper
+      # The peers whose forwarding headers count, refusing others with 421; see docs/docker.md.
+      # SCOREBOARD_TRUSTED_PROXIES: 172.16.0.0/12
+    secrets:
+      - pepper
+    volumes:
+      - scoreboard-data:/data
+
+secrets:
+  # The secret mixed into password hashes, kept in a file apart from the data volume.
+  pepper:
+    file: ./pepper
+
+volumes:
+  # The board's data, which outlives the container.
+  scoreboard-data:

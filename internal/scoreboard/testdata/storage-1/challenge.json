@@ -1,0 +1,76 @@
+{
+  "progress": 0.8,
+  "score": 400,
+  "goal": 500,
+  "tier": "monster",
+  "breakdown": {
+    "exercise": 350,
+    "dailyBonus": 30,
+    "varietyBonus": 20
+  },
+  "activities": [
+    {
+      "id": "AAAAAAAAAAAAAAAAAAAAAA",
+      "type": "traditionalStrengthTraining",
+      "day": "2026-10-20",
+      "points": {
+        "base": 30,
+        "bonus": 5
+      },
+      "durationSeconds": 3600,
+      "distanceMeters": 1200,
+      "start": "2026-10-20T07:30:00Z",
+      "details": {
+        "activeEnergyKilocalories": 400,
+        "averageHeartRate": 130,
+        "maximumHeartRate": 170,
+        "averageSpeedMetersPerSecond": 1.4,
+        "elevationGainMeters": 30,
+        "elevationLossMeters": 28,
+        "steps": 5000,
+        "averageCadence": 110,
+        "averagePowerWatts": 180,
+        "averageMETs": 6,
+        "carriedLoadKilograms": 13.6,
+        "inclinePercent": 2,
+        "strollerLoadKilograms": 15,
+        "exposureTemperatureCelsius": 80,
+        "weather": {
+          "temperatureCelsius": 12,
+          "humidityPercent": 60
+        }
+      },
+      "hasRoute": true,
+      "strength": {
+        "exercises": [
+          {
+            "catalogID": "6F1C2E3A-1B2C-4D5E-8F90-123456789ABC",
+            "name": "Landmine Press",
+            "loadIsAssistance": false,
+            "sets": [
+              {
+                "type": "dropset",
+                "reps": 10,
+                "durationSeconds": 40,
+                "distanceMeters": 20,
+                "weightKilograms": 25,
+                "right": {
+                  "reps": 8,
+                  "durationSeconds": 30,
+                  "weightKilograms": 20
+                },
+                "clusters": [
+                  {
+                    "reps": 4,
+                    "weightKilograms": 15
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "updatedAt": "2026-10-21T09:00:00Z"
+}

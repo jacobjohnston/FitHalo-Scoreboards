@@ -1,0 +1,19 @@
+{{/* The sign-in page: a passkey button and the username and password form. */ -}}
+{{define "content"}}
+<h1 class="display">{{.T "SignIn_Title"}}</h1>
+<div class="stack">
+<div class="app-card form">
+<div class="actions">
+<button class="button button-accent" type="button" data-passkey="sign-in"
+ data-begin="{{.BasePath}}/admin/sign-in/passkey/begin" data-finish="{{.BasePath}}/admin/sign-in/passkey/finish"
+ data-message="passkey-message" data-failed="{{.T "SignIn_PasskeyFailed"}}" data-unsupported="{{.T "Passkey_Unsupported"}}">{{.T "SignIn_WithPasskey"}}</button>
+</div>
+<p class="notice notice-error" id="passkey-message" role="alert" hidden></p>
+</div>
+<form class="app-card form" method="post" action="{{.BasePath}}/admin/sign-in">
+<label class="field"><span>{{.T "Common_Username"}}</span><input type="text" name="username" autocomplete="username" maxlength="64" value="{{.Data.Username}}" required></label>
+<label class="field"><span>{{.T "Common_Password"}}</span><input type="password" name="password" autocomplete="current-password" required></label>
+<div class="actions"><button class="button button-accent" type="submit">{{.T "SignIn_Submit"}}</button><a href="{{.BasePath}}/admin/recover">{{.T "SignIn_Recover"}}</a></div>
+</form>
+</div>
+{{end}}

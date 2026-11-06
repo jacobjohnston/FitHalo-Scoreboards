@@ -1,0 +1,875 @@
+/* A board's look, cut down from the FitHalo website's styles.css: its blue
+   accent, app background, rounded cards, pill buttons and heavy wide headings.
+   Archivo is served from the board itself, never from Google. */
+
+/* Font */
+
+@font-face {
+  font-family: "Archivo";
+  src: url("fonts/Archivo.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+}
+
+/* Theme: light by default, dark when the system prefers it */
+
+:root {
+  --accent-dark: #24e0ff;
+  --accent-light: #09ade9;
+  --accent-text-light: #0077a3;
+  --on-accent: #000000;
+  --accent: var(--accent-light);
+  --accent-text: var(--accent-text-light);
+
+  --app-from: #ffffff;
+  --app-to: #ffffff;
+  --app-tint: 20%;
+  --page-glow: 0%;
+
+  --ink: #000000;
+  --ink-soft: #6c6c70;
+  --line: rgba(0, 0, 0, 0.08);
+  --card: #ffffff;
+  --card-solid: #ffffff;
+  --card-edge: rgba(0, 0, 0, 0.05);
+  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+  --field: rgba(0, 0, 0, 0.04);
+  --display-from: #3a3a3a;
+  --display-to: #000000;
+  --glow: 0.5;
+  --danger: #df001c;
+  --success: #3e7d00;
+
+  --font-ui: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Archivo", "Arial Black", system-ui, sans-serif;
+
+  --radius: 22px;
+  --gutter: 20px;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: var(--accent-dark);
+    --accent-text: var(--accent-dark);
+    --app-from: #333333;
+    --app-to: #000000;
+    --app-tint: 0%;
+    --page-glow: 14%;
+    --ink: #ffffff;
+    --ink-soft: #a1a1a6;
+    --line: rgba(255, 255, 255, 0.1);
+    --card: rgba(255, 255, 255, 0.075);
+    --card-solid: #1c1c1e;
+    --card-edge: rgba(255, 255, 255, 0.06);
+    --card-shadow: none;
+    --field: rgba(255, 255, 255, 0.08);
+    --display-from: #ffffff;
+    --display-to: #b8b8b8;
+    --glow: 1;
+    --danger: #ff3034;
+    --success: #afff00;
+    color-scheme: dark;
+  }
+}
+
+/* Base */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(1100px 600px at 85% -5%, color-mix(in srgb, var(--accent) var(--page-glow), transparent), transparent 65%),
+    linear-gradient(135deg, var(--app-from), color-mix(in srgb, var(--accent) var(--app-tint), var(--app-to)));
+  background-attachment: fixed;
+  background-color: var(--app-to);
+  color: var(--ink);
+  font: 400 1.0625rem / 1.55 var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--accent-text);
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 880px;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+main {
+  flex: 1;
+  padding-block: 28px 64px;
+}
+
+/* Header */
+
+.header {
+  border-bottom: 1px solid var(--line);
+}
+
+.header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding-block: 14px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.logo-tile {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 4px;
+  border-radius: 23%;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.logo-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.tabs a,
+.tabs button {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-soft);
+  font: 600 0.95rem / 1.2 var(--font-ui);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tabs a:hover,
+.tabs button:hover {
+  color: var(--ink);
+}
+
+.tabs a[aria-current="page"] {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent-text);
+}
+
+/* Headings: one heavy, wide word in capitals, as on the App Store screenshots. */
+
+.display {
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--display-from), var(--display-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font: 900 clamp(2rem, 5.5vw, 3.25rem) / 0.98 var(--font-display);
+  font-stretch: 125%;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.subtitle {
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.9vw, 1.3rem);
+  font-variant-caps: small-caps;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.lead {
+  max-width: 62ch;
+  margin-top: 12px;
+  color: var(--ink-soft);
+  font-size: 1.1rem;
+}
+
+.section-title,
+.group-title {
+  margin-bottom: 14px;
+  font: 800 1.15rem / 1.2 var(--font-display);
+  font-stretch: 112%;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Muted text and the page's stack of cards */
+
+.muted {
+  color: var(--ink-soft);
+}
+
+.stack {
+  display: grid;
+  gap: 22px;
+  margin-top: 28px;
+}
+
+/* Cards */
+
+.app-card {
+  padding: clamp(20px, 3.5vw, 30px);
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--card-shadow);
+}
+
+/* Forms */
+
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field > span:not(.group-title),
+legend {
+  font-weight: 600;
+}
+
+.group-title {
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+.choice:has(input:disabled),
+select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hint {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+/* Field help: the ? button and its popover */
+
+.info-button {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1.5px solid var(--accent-text);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.info-popover {
+  box-sizing: border-box;
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 22px;
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius);
+  background: var(--card-solid);
+  color: var(--ink);
+  box-shadow: var(--card-shadow);
+}
+
+.info-popover::backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.info-popover h2 {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+}
+
+.info-popover p {
+  margin-bottom: 14px;
+  color: var(--ink-soft);
+}
+
+.info-popover .button {
+  margin-top: 16px;
+}
+
+/* Password strength meter */
+
+.strength {
+  display: grid;
+  gap: 6px;
+  font-size: 0.92rem;
+}
+
+.strength-heading {
+  display: flex;
+  gap: 6px;
+  color: var(--ink-soft);
+}
+
+.strength-heading strong {
+  color: var(--ink);
+}
+
+.strength-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--field);
+}
+
+.strength-bar {
+  width: 0;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+.strength [data-when],
+.password-rules [data-when] {
+  display: none;
+}
+
+.strength[data-level="none"] [data-when="none"],
+.strength[data-level="short"] [data-when="short"],
+.strength[data-level="weak"] [data-when="weak"],
+.strength[data-level="moderate"] [data-when="moderate"],
+.strength[data-level="good"] [data-when="good"],
+.strength[data-level="excellent"] [data-when="excellent"] {
+  display: inline;
+}
+
+.strength[data-level="weak"] .strength-bar,
+.strength[data-level="short"] .strength-bar {
+  background: var(--danger);
+}
+
+.strength[data-level="moderate"] .strength-bar {
+  background: #d6ab1d;
+}
+
+.strength[data-level="good"] .strength-bar {
+  background: var(--success);
+}
+
+.strength[data-level="excellent"] .strength-bar {
+  background: var(--accent);
+}
+
+/* Password rules checklist */
+
+.password-rules {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.92rem;
+}
+
+.password-rules li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.password-rules li::before {
+  flex: none;
+  width: 1em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.password-rules li[data-state="pass"]::before {
+  content: "✓";
+  color: var(--success);
+}
+
+.password-rules li[data-state="fail"]::before,
+.password-rules li[data-state="long"]::before {
+  content: "✕";
+  color: var(--danger);
+}
+
+.password-rules li[data-state="pending"]::before,
+.password-rules li[data-state="checking"]::before {
+  content: "•";
+  color: var(--ink-soft);
+}
+
+.password-rules li[data-state="error"]::before {
+  content: "!";
+  color: #d6ab1d;
+}
+
+.password-rules li[data-state="pass"] [data-when="pass"],
+.password-rules li[data-state="fail"] [data-when="fail"],
+.password-rules li[data-state="long"] [data-when="long"],
+.password-rules li[data-state="pending"] [data-when="pending"],
+.password-rules li[data-state="checking"] [data-when="checking"],
+.password-rules li[data-state="error"] [data-when="error"] {
+  display: inline;
+}
+
+/* Disabled buttons */
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* The landing page's get-the-app card */
+
+.get-app {
+  display: grid;
+  gap: 16px;
+}
+
+.get-app-title {
+  color: var(--ink);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.button .icon {
+  width: 1.2em;
+  height: 1.2em;
+  flex: none;
+  fill: currentcolor;
+}
+
+/* Warnings that flash when a setting changes */
+
+.change-warning {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.warning-icon {
+  flex: none;
+  color: #d6ab1d;
+  font-weight: 700;
+}
+
+.change-warning.is-changed {
+  color: var(--danger);
+}
+
+.change-warning.is-changed .warning-icon {
+  color: var(--danger);
+  animation: warning-flash 0.45s ease-in-out 3;
+}
+
+@keyframes warning-flash {
+  50% {
+    opacity: 0.2;
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .change-warning.is-changed .warning-icon {
+    animation: none;
+  }
+}
+
+/* Dividers, callouts and the new-password block */
+
+.form-divider {
+  margin: 8px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.callout {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--field);
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.password-check {
+  display: grid;
+  gap: 18px;
+}
+
+.password-details {
+  display: grid;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+/* Inputs, choices and columns */
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--field);
+  color: var(--ink);
+  font: inherit;
+}
+
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+fieldset {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.choice input {
+  margin-top: 0.3em;
+  accent-color: var(--accent);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+/* Buttons */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--ink);
+  font: 600 1rem / 1.2 var(--font-ui);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button-accent {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 0 calc(18px * var(--glow)) color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.button-danger {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+
+.button-small {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
+.inline-form {
+  display: inline;
+}
+
+/* Notices */
+
+.notice {
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-weight: 600;
+}
+
+.notice-success {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+}
+
+.notice-error {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+
+/* Utilities */
+
+[hidden] {
+  display: none !important;
+}
+
+.spaced {
+  margin-top: 12px;
+}
+
+.centered {
+  justify-content: center;
+}
+
+.grow {
+  flex: 1 1 180px;
+  width: auto;
+}
+
+/* Members and passkeys */
+
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding-block: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+.row-main {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.row-title {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.row-detail {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+/* Usage */
+
+.usage-share {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.usage-meter {
+  width: 160px;
+  height: 10px;
+}
+
+/* The invite */
+
+.invite {
+  display: grid;
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.qr {
+  padding: 10px;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.link-field {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.85rem;
+}
+
+/* The board's avatar */
+
+.avatar-field {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.board-avatar {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--field);
+}
+
+.board-avatar img,
+.board-avatar canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-controls {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* The landing page */
+
+.landing {
+  display: grid;
+  justify-items: center;
+  gap: 26px;
+  max-width: 560px;
+  margin-inline: auto;
+  padding-top: clamp(12px, 5vw, 40px);
+  text-align: center;
+}
+
+.landing .qr {
+  width: min(280px, 80vw);
+  padding: 14px;
+  box-shadow: 0 0 calc(28px * var(--glow)) color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.landing .actions {
+  justify-content: center;
+}
+
+.facts {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  color: var(--ink-soft);
+  list-style: none;
+}
+
+/* Footer */
+
+.footer {
+  padding-block: 24px calc(24px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.footer form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer select {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
+/* Narrow screens */
+
+@media (max-width: 640px) {
+  .invite {
+    grid-template-columns: 1fr;
+  }
+
+  .invite .qr {
+    max-width: 240px;
+  }
+
+  .tabs {
+    margin-left: 0;
+  }
+}

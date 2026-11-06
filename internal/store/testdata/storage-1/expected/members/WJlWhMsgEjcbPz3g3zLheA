@@ -1,0 +1,15 @@
+{
+  "id": "WJlWhMsgEjcbPz3g3zLheA",
+  "publicKey": "BBtVdvDZAtyXB4ofl0WkEZhuM8o-AUuATBIggIW7z-OcqCzUSwKh_dAGabL1n3IyXsDjKfvSOy2OcQTS7_SBxTc",
+  "displayName": "Fixture Member",
+  "status": "active",
+  "sharing": {
+    "score": "details",
+    "activity": "full",
+    "routes": true,
+    "strengthSets": true,
+    "strengthWeights": true
+  },
+  "hasAvatar": true,
+  "joinedAt": "2026-10-01T08:00:00Z"
+}

@@ -1,0 +1,43 @@
+{{/* The Members page: pending, active and blocked members, with their actions. */ -}}
+{{define "content"}}
+<h1 class="display">{{.T "Nav_Members"}}</h1>
+<div class="stack">
+{{if .Data.Pending}}
+<section class="app-card">
+<h2 class="section-title">{{.T "Members_Pending"}}</h2>
+<p class="hint">{{.T "Members_PendingCount" "count" (len .Data.Pending) "maximum" .Data.PendingLimit}}</p>
+<ul class="rows">{{range .Data.Pending}}
+<li class="row"><div class="row-main"><div class="row-title">{{.Name}}</div><div class="row-detail">{{.Joined}}</div></div>
+<div class="actions">
+<a class="button button-small" href="{{$.BasePath}}/admin/members/{{.ID}}/details">{{$.T "Members_Details"}}</a>
+<form class="inline-form" method="post" action="{{$.BasePath}}/admin/members/{{.ID}}/approve"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="button button-small button-accent" type="submit">{{$.T "Members_Approve"}}</button></form>
+<form class="inline-form" method="post" action="{{$.BasePath}}/admin/members/{{.ID}}/delete"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="button button-small" type="submit">{{$.T "Members_Decline"}}</button></form>
+<form class="inline-form" method="post" action="{{$.BasePath}}/admin/members/{{.ID}}/block"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="button button-small button-danger" type="submit">{{$.T "Members_Block"}}</button></form>
+</div></li>{{end}}
+</ul>
+</section>
+{{end}}
+<section class="app-card">
+<h2 class="section-title">{{.T "Members_Active"}}</h2>
+{{if .Data.Active}}<ul class="rows">{{range .Data.Active}}
+<li class="row"><div class="row-main"><div class="row-title">{{.Name}}</div><div class="row-detail">{{.Joined}} · {{.Sharing}}</div></div>
+<div class="actions">
+<a class="button button-small" href="{{$.BasePath}}/admin/members/{{.ID}}/details">{{$.T "Members_Details"}}</a>
+{{if .HasAvatar}}<form class="inline-form" method="post" action="{{$.BasePath}}/admin/members/{{.ID}}/clear-avatar"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="button button-small" type="submit">{{$.T "Members_ClearAvatar"}}</button></form>{{end}}
+<form class="inline-form" method="post" action="{{$.BasePath}}/admin/members/{{.ID}}/delete"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="button button-small" type="submit">{{$.T "Members_Delete"}}</button></form>
+<form class="inline-form" method="post" action="{{$.BasePath}}/admin/members/{{.ID}}/block"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="button button-small button-danger" type="submit">{{$.T "Members_Block"}}</button></form>
+</div></li>{{end}}
+</ul>{{else}}<p class="muted">{{.T "Members_None"}}</p>{{end}}
+<p class="hint spaced">{{.T "Members_DeleteHint"}}</p>
+</section>
+{{if .Data.Blocked}}
+<section class="app-card">
+<h2 class="section-title">{{.T "Members_Blocked"}}</h2>
+<ul class="rows">{{range .Data.Blocked}}
+<li class="row"><div class="row-main"><div class="row-title">{{.ShortID}}</div><div class="row-detail">{{.When}}</div></div>
+<form class="inline-form" method="post" action="{{$.BasePath}}/admin/blocked/{{.ID}}/unblock"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="button button-small" type="submit">{{$.T "Members_Unblock"}}</button></form></li>{{end}}
+</ul>
+</section>
+{{end}}
+</div>
+{{end}}
