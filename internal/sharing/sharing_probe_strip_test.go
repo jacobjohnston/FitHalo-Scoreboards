@@ -343,7 +343,7 @@ func TestStripDropsUnknownFieldsAtEveryDepth(t *testing.T) {
 	for _, s := range sharing.All() {
 		out := checkStripInvariants(t, a, doc, s)
 		data := string(mustJSON(t, out))
-		for _, word := range []string{"secret", "title", "route\"", "total", "heartRate", "city", "notes", "rpe", "rest"} {
+		for _, word := range []string{"secret", "title", "route\"", "total", "heartRate", "\"city\"", "notes", "rpe", "rest"} {
 			if strings.Contains(data, word) {
 				t.Errorf("Strip at %+v kept %q: %s", s, word, data)
 			}
@@ -754,6 +754,21 @@ type vocabularies struct {
 
 	// Tiers lists WeeklyChallenge.tier.
 	Tiers vocabulary `json:"tiers"`
+
+	// MuscleGroups lists StrengthMuscle.group.
+	MuscleGroups vocabulary `json:"muscleGroups"`
+
+	// MuscleIntensities lists StrengthMuscle.intensity.
+	MuscleIntensities vocabulary `json:"muscleIntensities"`
+
+	// ModifierKinds lists StrengthModifier.kind.
+	ModifierKinds vocabulary `json:"modifierKinds"`
+
+	// AssistModes lists StrengthModifier.assist.
+	AssistModes vocabulary `json:"assistModes"`
+
+	// PartialRanges lists StrengthModifier.partialRange.
+	PartialRanges vocabulary `json:"partialRanges"`
 }
 
 // vocabulary is one list of the file.
@@ -786,10 +801,20 @@ func TestVocabularyFileIsWellFormed(t *testing.T) {
 	if err := dec.Decode(&v); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if v.Version != 1 {
+	if v.Version != 2 {
 		t.Errorf("version %d", v.Version)
 	}
-	for name, list := range map[string]vocabulary{"activityTypes": v.ActivityTypes, "setTypes": v.SetTypes, "tiers": v.Tiers} {
+	lists := map[string]vocabulary{
+		"activityTypes":     v.ActivityTypes,
+		"setTypes":          v.SetTypes,
+		"tiers":             v.Tiers,
+		"muscleGroups":      v.MuscleGroups,
+		"muscleIntensities": v.MuscleIntensities,
+		"modifierKinds":     v.ModifierKinds,
+		"assistModes":       v.AssistModes,
+		"partialRanges":     v.PartialRanges,
+	}
+	for name, list := range lists {
 		if len(list.Values) == 0 || list.Description == "" {
 			t.Errorf("%s is empty or undescribed", name)
 		}

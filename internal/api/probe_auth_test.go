@@ -40,8 +40,8 @@ func TestBoardCarriesEveryRequiredFieldAndNoSecret(t *testing.T) {
 			t.Errorf("board exposes %q, which the Board schema does not list", field)
 		}
 	}
-	if document["apiVersion"] != "1.0" {
-		t.Errorf("apiVersion = %v, want 1.0", document["apiVersion"])
+	if document["apiVersion"] != "1.1" {
+		t.Errorf("apiVersion = %v, want 1.1", document["apiVersion"])
 	}
 	if id, _ := document["id"].(string); len(id) != 22 {
 		t.Errorf("board id %q is not 22 characters", id)

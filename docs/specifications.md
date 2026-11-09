@@ -9,7 +9,7 @@ scoreboard is and defines the roles used here: the operator, the admin, and the 
 |---|---|
 | [`openapi.yaml`](../openapi.yaml) | The API: all operations, schemas, problem codes, conventions, limits, and the versioning rules. The source of truth for the server and the apps |
 | [`spec/sharing.json`](../spec/sharing.json) | All weekly challenge data and the sharing each field requires. The server removes fields by this file, and both sides test against this file |
-| [`spec/vocabularies.json`](../spec/vocabularies.json) | The known activity types, set types, and challenge tiers |
+| [`spec/vocabularies.json`](../spec/vocabularies.json) | The known activity types, set types, challenge tiers, muscle groups and intensities, modifier kinds, assist modes, and partial ranges |
 
 ## Contents
 
@@ -96,7 +96,7 @@ scoreboards with older and newer apps.
 | Members | 1,000 a scoreboard, waiting and active together; a join past the limit is refused with `memberLimitReached` |
 | Custom exercise name | 1 to 100 characters, with no control, format, or line-separator characters, apart from the joiners and tags inside an emoji |
 | Avatar upload | JPEG or PNG, 256 KB, at most 2048 pixels a side and 3,145,728 pixels in all; served as JPEG, at most 512 × 512 |
-| Weekly challenge body | 384 KB, so a stored weekly challenge fits any backend, DynamoDB's 400 KB items included; 200 activities, 50 exercises an activity, 50 sets an exercise, 20 clusters a set |
+| Weekly challenge body | 384 KB, so a stored weekly challenge fits any backend, DynamoDB's 400 KB items included; 200 activities, 50 exercises an activity, 50 sets an exercise, 20 clusters a set, 20 modifiers an exercise, 30 muscle groups an activity |
 | Route | 5,000 points, 256 KB |
 | Weekly challenge storage | 1 MB for one member's weekly challenge and its routes together; an upload that would store more is refused with `payloadTooLarge` |
 | Clock skew | 300 seconds either way |
@@ -235,8 +235,10 @@ added, never renamed, reused, or removed.
 
 [`spec/vocabularies.json`](../spec/vocabularies.json) lists the known values of the API's open
 vocabularies with English names: activity types (FitHalo's workout type keys, from `outdoorRucking` to
-`unknown`), set types (`warmup`, `normal`, `failure`, `myo`, `dropset`, `isometric`), and challenge tiers
-(`beginner` through `deity`). Clients show their own localized names. A value missing from a list is
+`unknown`), set types (`warmup`, `normal`, `failure`, `myo`, `dropset`, `isometric`), challenge tiers
+(`beginner` through `deity`), and from 1.1 the muscle groups and intensities a strength workout's muscle
+map draws, and the modifier kinds, assist modes, and partial ranges an exercise carries. Clients show their
+own localized names. A value missing from a list is
 shown generically, never refused, so a newer client can send a type an older server or viewer does not
 know. Values are never renamed or reused; a list only grows.
 

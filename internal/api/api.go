@@ -24,7 +24,7 @@ import (
 )
 
 // APIVersion is the version of openapi.yaml this server implements.
-const APIVersion = "1.0"
+const APIVersion = "1.1"
 
 // Body limits, from openapi.yaml's Limits table where it gives one.
 const (

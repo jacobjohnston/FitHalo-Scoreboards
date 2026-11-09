@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "All weekly challenge data and the sharing it needs. A field is allowed when every entry in its requires holds: score and activity at least the level named, in the order given by levels; routes, strengthSets and strengthWeights true. An object or array is allowed when anything beneath it is. A client never sends a field it is not allowed; a server strips any it receives and never serves one. A field missing from this file is allowed at no level, so adding a field to a weekly challenge means adding it here.",
   "levels": {
     "score": [
@@ -131,6 +131,13 @@
     },
     {
       "path": "activities[].details.maximumHeartRate",
+      "requires": {
+        "score": "details",
+        "activity": "full"
+      }
+    },
+    {
+      "path": "activities[].details.minimumHeartRate",
       "requires": {
         "score": "details",
         "activity": "full"
@@ -308,6 +315,142 @@
       }
     },
     {
+      "path": "activities[].strength.deload",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.muscles[].group",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.muscles[].intensity",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].personalRecord",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].injured",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].angleDegrees",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].modifiers[].kind",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].modifiers[].assist",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].modifiers[].partialRange",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].modifiers[].percent",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].modifiers[].tempo.eccentricSeconds",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].modifiers[].tempo.bottomPauseSeconds",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].modifiers[].tempo.concentricSeconds",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].modifiers[].tempo.topPauseSeconds",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].modifiers[].velocityMetersPerSecond",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].repsInReserve",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].sets[].right.repsInReserve",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true
+      }
+    },
+    {
       "path": "activities[].strength.exercises[].loadIsAssistance",
       "requires": {
         "score": "details",
@@ -336,6 +479,33 @@
     },
     {
       "path": "activities[].strength.exercises[].sets[].clusters[].weightKilograms",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true,
+        "strengthWeights": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].volumeKilograms",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true,
+        "strengthWeights": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].modifiers[].weightKilograms",
+      "requires": {
+        "score": "details",
+        "activity": "points",
+        "strengthSets": true,
+        "strengthWeights": true
+      }
+    },
+    {
+      "path": "activities[].strength.exercises[].modifiers[].weightPerRepKilograms",
       "requires": {
         "score": "details",
         "activity": "points",

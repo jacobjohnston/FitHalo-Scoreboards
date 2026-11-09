@@ -262,7 +262,7 @@ func TestLoadAllowlistHonoursFileOrderOfLevels(t *testing.T) {
 // TestSpecFileIsConsistent checks the shipped file against the ladder the docs describe.
 func TestSpecFileIsConsistent(t *testing.T) {
 	ps := loadProbeSpec(t)
-	if ps.Version != 1 {
+	if ps.Version != 2 {
 		t.Errorf("version %d", ps.Version)
 	}
 	if !slices.Equal(ps.Levels["score"], []string{"progress", "score", "details"}) || !slices.Equal(ps.Levels["activity"], []string{"none", "points", "summary", "full"}) {

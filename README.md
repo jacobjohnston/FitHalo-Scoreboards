@@ -236,7 +236,7 @@ these files, and the apps read the same files.
 |---|---|
 | [`openapi.yaml`](openapi.yaml) | The API: all operations, schemas, problem codes, conventions, limits, and the versioning rules. The source of truth for the server and the apps |
 | [`spec/sharing.json`](spec/sharing.json) | All weekly challenge data and the sharing each field requires. The server removes fields by this file, and both sides test against this file |
-| [`spec/vocabularies.json`](spec/vocabularies.json) | The known activity types, set types, and challenge tiers |
+| [`spec/vocabularies.json`](spec/vocabularies.json) | The known activity types, set types, challenge tiers, muscle groups and intensities, modifier kinds, assist modes, and partial ranges |
 
 The specifications document explains the API's operations, conventions, versioning rules, limits, and
 problem codes; the sharing model the files encode; and the layout of stored data, which is a contract

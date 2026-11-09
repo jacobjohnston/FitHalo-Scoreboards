@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "The known values of the API's open vocabularies, with English names for people reading the spec. Clients show their own localized names. A value missing from a list is shown generically, never refused, so a newer client can send a type an older server or viewer has not heard of. Values are never renamed or reused; a list only grows.",
   "activityTypes": {
     "description": "Activity.type. The slugs are FitHalo's workout type keys. unknown is a workout whose type FitHalo has no name for, such as one another app recorded.",
@@ -425,6 +425,219 @@
       {
         "slug": "deity",
         "name": "Deity"
+      }
+    ]
+  },
+  "muscleGroups": {
+    "description": "StrengthMuscle.group. Added in 1.1.",
+    "values": [
+      {
+        "slug": "abdominals",
+        "name": "Abdominals"
+      },
+      {
+        "slug": "abductors",
+        "name": "Abductors"
+      },
+      {
+        "slug": "adductors",
+        "name": "Adductors"
+      },
+      {
+        "slug": "biceps",
+        "name": "Biceps"
+      },
+      {
+        "slug": "calves",
+        "name": "Calves"
+      },
+      {
+        "slug": "chest",
+        "name": "Chest"
+      },
+      {
+        "slug": "forearms",
+        "name": "Forearms"
+      },
+      {
+        "slug": "frontDelts",
+        "name": "Front deltoids"
+      },
+      {
+        "slug": "glutes",
+        "name": "Glutes"
+      },
+      {
+        "slug": "hamstrings",
+        "name": "Hamstrings"
+      },
+      {
+        "slug": "lats",
+        "name": "Lats"
+      },
+      {
+        "slug": "lowerBack",
+        "name": "Lower back"
+      },
+      {
+        "slug": "neck",
+        "name": "Neck"
+      },
+      {
+        "slug": "obliques",
+        "name": "Obliques"
+      },
+      {
+        "slug": "quadriceps",
+        "name": "Quadriceps"
+      },
+      {
+        "slug": "rearDelts",
+        "name": "Rear deltoids"
+      },
+      {
+        "slug": "sideDelts",
+        "name": "Side deltoids"
+      },
+      {
+        "slug": "tibialis",
+        "name": "Tibialis"
+      },
+      {
+        "slug": "traps",
+        "name": "Traps"
+      },
+      {
+        "slug": "triceps",
+        "name": "Triceps"
+      },
+      {
+        "slug": "upperBack",
+        "name": "Upper back"
+      }
+    ]
+  },
+  "muscleIntensities": {
+    "description": "StrengthMuscle.intensity, from the hardest worked to the least: the hardest any one exercise worked the group. Added in 1.1.",
+    "values": [
+      {
+        "slug": "primary",
+        "name": "Worked as a primary mover"
+      },
+      {
+        "slug": "secondary",
+        "name": "Worked as a secondary mover"
+      },
+      {
+        "slug": "stabilizer",
+        "name": "Worked as a stabilizer"
+      }
+    ]
+  },
+  "modifierKinds": {
+    "description": "StrengthModifier.kind. Added in 1.1.",
+    "values": [
+      {
+        "slug": "adaptive",
+        "name": "Adaptive load"
+      },
+      {
+        "slug": "assist",
+        "name": "Assist"
+      },
+      {
+        "slug": "asymmetric",
+        "name": "Asymmetric load"
+      },
+      {
+        "slug": "bands",
+        "name": "Bands"
+      },
+      {
+        "slug": "bloodFlowRestriction",
+        "name": "Blood flow restriction"
+      },
+      {
+        "slug": "chains",
+        "name": "Chains"
+      },
+      {
+        "slug": "concentricOverload",
+        "name": "Concentric overload"
+      },
+      {
+        "slug": "damper",
+        "name": "Damper"
+      },
+      {
+        "slug": "eccentricOnly",
+        "name": "Eccentric only"
+      },
+      {
+        "slug": "eccentricOverload",
+        "name": "Eccentric overload"
+      },
+      {
+        "slug": "inverseChains",
+        "name": "Inverse chains"
+      },
+      {
+        "slug": "isokinetic",
+        "name": "Isokinetic"
+      },
+      {
+        "slug": "partialRange",
+        "name": "Partial range"
+      },
+      {
+        "slug": "progression",
+        "name": "Progression"
+      },
+      {
+        "slug": "regression",
+        "name": "Regression"
+      },
+      {
+        "slug": "reverseBands",
+        "name": "Reverse bands"
+      },
+      {
+        "slug": "tempo",
+        "name": "Tempo"
+      }
+    ]
+  },
+  "assistModes": {
+    "description": "StrengthModifier.assist. Added in 1.1.",
+    "values": [
+      {
+        "slug": "gradualReduce",
+        "name": "Reduces the load gradually"
+      },
+      {
+        "slug": "gradualReturn",
+        "name": "Returns the load gradually"
+      },
+      {
+        "slug": "instant",
+        "name": "Takes the load at once"
+      }
+    ]
+  },
+  "partialRanges": {
+    "description": "StrengthModifier.partialRange. Added in 1.1.",
+    "values": [
+      {
+        "slug": "lengthened",
+        "name": "Lengthened"
+      },
+      {
+        "slug": "midRange",
+        "name": "Mid-range"
+      },
+      {
+        "slug": "shortened",
+        "name": "Shortened"
       }
     ]
   }

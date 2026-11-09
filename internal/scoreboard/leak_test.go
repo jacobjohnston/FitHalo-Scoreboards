@@ -32,8 +32,18 @@ var testWeekStart = time.Date(2026, 10, 19, 0, 0, 0, 0, time.UTC)
 
 // fullChallenge is a weekly challenge with every field filled in, so stripping has something to remove at every level.
 func fullChallenge() WeeklyChallenge {
-	side := &StrengthSide{Reps: pointer[int64](8), DurationSeconds: pointer(30.0), WeightKilograms: pointer(20.0)}
+	side := &StrengthSide{Reps: pointer[int64](8), DurationSeconds: pointer(30.0), WeightKilograms: pointer(20.0), RepsInReserve: pointer[int64](2)}
 	clusters := []StrengthCluster{{Reps: pointer[int64](4), WeightKilograms: pointer(15.0)}}
+	muscles := []StrengthMuscle{{Group: "chest", Intensity: "primary"}, {Group: "triceps", Intensity: "secondary"}}
+	modifiers := []StrengthModifier{
+		{Kind: "assist", Assist: pointer("gradualReduce")},
+		{Kind: "partialRange", PartialRange: pointer("lengthened")},
+		{Kind: "chains", Percent: pointer(20.0)},
+		{Kind: "tempo", Tempo: &StrengthTempo{EccentricSeconds: 3, BottomPauseSeconds: 1, ConcentricSeconds: 1, TopPauseSeconds: 0}},
+		{Kind: "isokinetic", VelocityMetersPerSecond: pointer(0.5)},
+		{Kind: "bands", WeightKilograms: pointer(10.0)},
+		{Kind: "progression", WeightPerRepKilograms: pointer(1.0)},
+	}
 	activities := []Activity{{
 		ID:              "AAAAAAAAAAAAAAAAAAAAAA",
 		Type:            "traditionalStrengthTraining",
@@ -46,6 +56,7 @@ func fullChallenge() WeeklyChallenge {
 			ActiveEnergyKilocalories:    pointer(400.0),
 			AverageHeartRate:            pointer(130.0),
 			MaximumHeartRate:            pointer(170.0),
+			MinimumHeartRate:            pointer(90.0),
 			AverageSpeedMetersPerSecond: pointer(1.4),
 			ElevationGainMeters:         pointer(30.0),
 			ElevationLossMeters:         pointer(28.0),
@@ -64,6 +75,11 @@ func fullChallenge() WeeklyChallenge {
 			CatalogID:        pointer("6F1C2E3A-1B2C-4D5E-8F90-123456789ABC"),
 			Name:             pointer("Landmine Press"),
 			LoadIsAssistance: pointer(false),
+			AngleDegrees:     pointer[int64](30),
+			Injured:          pointer(true),
+			Modifiers:        &modifiers,
+			PersonalRecord:   pointer(true),
+			VolumeKilograms:  pointer(250.0),
 			Sets: []StrengthSet{{
 				Type:            "dropset",
 				Reps:            pointer[int64](10),
@@ -72,8 +88,9 @@ func fullChallenge() WeeklyChallenge {
 				WeightKilograms: pointer(25.0),
 				Right:           side,
 				Clusters:        &clusters,
+				RepsInReserve:   pointer[int64](1),
 			}},
-		}}},
+		}}, Deload: pointer(true), Muscles: &muscles},
 	}}
 	return WeeklyChallenge{
 		Progress:   pointer(0.8),
@@ -146,12 +163,45 @@ func TestWeightsNeedTheirOwnOption(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	set := (*challenge.Activities)[0].Strength.Exercises[0].Sets[0]
+	exercise := (*challenge.Activities)[0].Strength.Exercises[0]
+	set := exercise.Sets[0]
 	if set.Reps == nil || set.WeightKilograms != nil || set.Right.WeightKilograms != nil || (*set.Clusters)[0].WeightKilograms != nil {
 		t.Fatalf("sets without weights came out as %+v", set)
 	}
+	if set.RepsInReserve == nil || set.Right.RepsInReserve == nil {
+		t.Fatalf("sets without weights lost their reps in reserve: %+v", set)
+	}
+	if exercise.VolumeKilograms != nil {
+		t.Fatalf("an exercise without weights kept its volume of %v", *exercise.VolumeKilograms)
+	}
+	sent := (*fullChallenge().Activities)[0].Strength.Exercises[0].Modifiers
+	if exercise.Modifiers == nil || len(*exercise.Modifiers) != len(*sent) {
+		t.Fatal("modifiers without weights did not keep their kinds")
+	}
+	for _, modifier := range *exercise.Modifiers {
+		if modifier.WeightKilograms != nil || modifier.WeightPerRepKilograms != nil {
+			t.Fatalf("a %s modifier without weights kept a weight", modifier.Kind)
+		}
+	}
 	if (*challenge.Activities)[0].Details != nil || (*challenge.Activities)[0].DurationSeconds != nil {
 		t.Fatal("sets without full activity still carried details")
+	}
+}
+
+// TestMinimumHeartRateNeedsFullActivity checks the heart rate range is kept only with the rest of the details.
+func TestMinimumHeartRateNeedsFullActivity(t *testing.T) {
+	service := &Service{Allowlist: loadAllowlist(t)}
+	for _, activity := range []sharing.ActivityLevel{sharing.ActivityPoints, sharing.ActivitySummary, sharing.ActivityFull} {
+		level := sharing.Sharing{Score: sharing.ScoreDetails, Activity: activity}
+		challenge, err := service.challengeFrom(decoded(t, fullChallenge()), level, testWeekStart)
+		if err != nil {
+			t.Fatal(err)
+		}
+		details := (*challenge.Activities)[0].Details
+		isKept := details != nil && details.MinimumHeartRate != nil
+		if isKept != (activity == sharing.ActivityFull) {
+			t.Errorf("at %s activity sharing the minimum heart rate was kept: %v", activity, isKept)
+		}
 	}
 }
 

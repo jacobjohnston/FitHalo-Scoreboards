@@ -33,6 +33,15 @@ const (
 	// MaximumExerciseName is the most characters in a custom exercise's name.
 	MaximumExerciseName = 100
 
+	// MaximumModifiers is the most modifiers on an exercise.
+	MaximumModifiers = 20
+
+	// MaximumMuscles is the most muscle groups in an activity.
+	MaximumMuscles = 30
+
+	// MaximumAngleDegrees is the steepest an exercise's angle may be either side of flat.
+	MaximumAngleDegrees = 90
+
 	// MaximumSlugLength is the most bytes in a vocabulary slug.
 	MaximumSlugLength = 64
 )
@@ -322,6 +331,7 @@ func validateDetails(where string, details *ActivityDetails) error {
 		nonNegative(where+".activeEnergyKilocalories", details.ActiveEnergyKilocalories),
 		nonNegative(where+".averageHeartRate", details.AverageHeartRate),
 		nonNegative(where+".maximumHeartRate", details.MaximumHeartRate),
+		nonNegative(where+".minimumHeartRate", details.MinimumHeartRate),
 		nonNegative(where+".averageSpeedMetersPerSecond", details.AverageSpeedMetersPerSecond),
 		nonNegative(where+".elevationGainMeters", details.ElevationGainMeters),
 		nonNegative(where+".elevationLossMeters", details.ElevationLossMeters),
@@ -351,6 +361,9 @@ func validateStrength(where string, strength *Strength) error {
 	if len(strength.Exercises) > MaximumExercises {
 		return fmt.Errorf("%s has more than %d exercises", where, MaximumExercises)
 	}
+	if err := validateMuscles(where+".muscles", strength.Muscles); err != nil {
+		return err
+	}
 	for exerciseIndex, exercise := range strength.Exercises {
 		exerciseWhere := fmt.Sprintf("%s.exercises[%d]", where, exerciseIndex)
 		if exercise.CatalogID == nil && exercise.Name == nil {
@@ -370,6 +383,15 @@ func validateStrength(where string, strength *Strength) error {
 		if len(exercise.Sets) > MaximumSets {
 			return fmt.Errorf("%s has more than %d sets", exerciseWhere, MaximumSets)
 		}
+		if angle := exercise.AngleDegrees; angle != nil && (*angle < -MaximumAngleDegrees || *angle > MaximumAngleDegrees) {
+			return fmt.Errorf("%s.angleDegrees is not between -%d and %d", exerciseWhere, MaximumAngleDegrees, MaximumAngleDegrees)
+		}
+		if err := errors.Join(
+			nonNegative(exerciseWhere+".volumeKilograms", exercise.VolumeKilograms),
+			validateModifiers(exerciseWhere+".modifiers", exercise.Modifiers),
+		); err != nil {
+			return err
+		}
 		for setIndex, set := range exercise.Sets {
 			setWhere := fmt.Sprintf("%s.sets[%d]", exerciseWhere, setIndex)
 			checks := []error{
@@ -378,12 +400,14 @@ func validateStrength(where string, strength *Strength) error {
 				nonNegative(setWhere+".durationSeconds", set.DurationSeconds),
 				nonNegative(setWhere+".distanceMeters", set.DistanceMeters),
 				nonNegative(setWhere+".weightKilograms", set.WeightKilograms),
+				nonNegativeInteger(setWhere+".repsInReserve", set.RepsInReserve),
 			}
 			if set.Right != nil {
 				checks = append(checks,
 					nonNegativeInteger(setWhere+".right.reps", set.Right.Reps),
 					nonNegative(setWhere+".right.durationSeconds", set.Right.DurationSeconds),
-					nonNegative(setWhere+".right.weightKilograms", set.Right.WeightKilograms))
+					nonNegative(setWhere+".right.weightKilograms", set.Right.WeightKilograms),
+					nonNegativeInteger(setWhere+".right.repsInReserve", set.Right.RepsInReserve))
 			}
 			if set.Clusters != nil {
 				if len(*set.Clusters) > MaximumClusters {
@@ -402,6 +426,82 @@ func validateStrength(where string, strength *Strength) error {
 		}
 	}
 	return nil
+}
+
+// validateMuscles checks an activity's muscle groups, naming each field from where.
+func validateMuscles(where string, muscles *[]StrengthMuscle) error {
+	if muscles == nil {
+		return nil
+	}
+	if len(*muscles) > MaximumMuscles {
+		return fmt.Errorf("%s has more than %d muscle groups", where, MaximumMuscles)
+	}
+	for index, muscle := range *muscles {
+		muscleWhere := fmt.Sprintf("%s[%d]", where, index)
+		if err := errors.Join(slug(muscleWhere+".group", muscle.Group), slug(muscleWhere+".intensity", muscle.Intensity)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateModifiers checks an exercise's modifiers, each with at most one value, naming each field from where.
+func validateModifiers(where string, modifiers *[]StrengthModifier) error {
+	if modifiers == nil {
+		return nil
+	}
+	if len(*modifiers) > MaximumModifiers {
+		return fmt.Errorf("%s has more than %d modifiers", where, MaximumModifiers)
+	}
+	for index, modifier := range *modifiers {
+		modifierWhere := fmt.Sprintf("%s[%d]", where, index)
+		checks := []error{
+			slug(modifierWhere+".kind", modifier.Kind),
+			nonNegative(modifierWhere+".percent", modifier.Percent),
+			nonNegative(modifierWhere+".velocityMetersPerSecond", modifier.VelocityMetersPerSecond),
+			nonNegative(modifierWhere+".weightKilograms", modifier.WeightKilograms),
+			nonNegative(modifierWhere+".weightPerRepKilograms", modifier.WeightPerRepKilograms),
+		}
+		if modifier.Assist != nil {
+			checks = append(checks, slug(modifierWhere+".assist", *modifier.Assist))
+		}
+		if modifier.PartialRange != nil {
+			checks = append(checks, slug(modifierWhere+".partialRange", *modifier.PartialRange))
+		}
+		if tempo := modifier.Tempo; tempo != nil {
+			checks = append(checks,
+				nonNegativeInteger(modifierWhere+".tempo.eccentricSeconds", &tempo.EccentricSeconds),
+				nonNegativeInteger(modifierWhere+".tempo.bottomPauseSeconds", &tempo.BottomPauseSeconds),
+				nonNegativeInteger(modifierWhere+".tempo.concentricSeconds", &tempo.ConcentricSeconds),
+				nonNegativeInteger(modifierWhere+".tempo.topPauseSeconds", &tempo.TopPauseSeconds))
+		}
+		if modifier.valueCount() > 1 {
+			checks = append(checks, fmt.Errorf("%s has more than one value", modifierWhere))
+		}
+		if err := errors.Join(checks...); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// valueCount is how many of the modifier's values are set.
+func (modifier StrengthModifier) valueCount() int {
+	count := 0
+	for _, isSet := range []bool{
+		modifier.Assist != nil,
+		modifier.PartialRange != nil,
+		modifier.Percent != nil,
+		modifier.Tempo != nil,
+		modifier.VelocityMetersPerSecond != nil,
+		modifier.WeightKilograms != nil,
+		modifier.WeightPerRepKilograms != nil,
+	} {
+		if isSet {
+			count++
+		}
+	}
+	return count
 }
 
 // slug requires value to be a vocabulary slug.

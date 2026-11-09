@@ -564,6 +564,48 @@ func TestWeeklyChallengeCountLimits(t *testing.T) {
 		a["strength"] = map[string]any{"exercises": exerciseList}
 		return map[string]any{"progress": 0, "activities": []any{a}}
 	}
+	withExercise := func(fields map[string]any) map[string]any {
+		body := strength(1, 1, 0)
+		exercise := body["activities"].([]any)[0].(map[string]any)["strength"].(map[string]any)["exercises"].([]any)[0].(map[string]any)
+		for key, value := range fields {
+			exercise[key] = value
+		}
+		return body
+	}
+	modifiers := func(count int, modifier map[string]any) map[string]any {
+		var list []any
+		for m := 0; m < count; m++ {
+			list = append(list, modifier)
+		}
+		return withExercise(map[string]any{"modifiers": list})
+	}
+	muscles := func(count int) map[string]any {
+		body := strength(1, 1, 0)
+		var list []any
+		for m := 0; m < count; m++ {
+			list = append(list, map[string]any{"group": "chest", "intensity": "primary"})
+		}
+		body["activities"].([]any)[0].(map[string]any)["strength"].(map[string]any)["muscles"] = list
+		return body
+	}
+	muscle := func(group, intensity string) map[string]any {
+		body := strength(1, 1, 0)
+		body["activities"].([]any)[0].(map[string]any)["strength"].(map[string]any)["muscles"] = []any{map[string]any{"group": group, "intensity": intensity}}
+		return body
+	}
+	withSet := func(fields map[string]any) map[string]any {
+		body := strength(1, 1, 0)
+		exercise := body["activities"].([]any)[0].(map[string]any)["strength"].(map[string]any)["exercises"].([]any)[0].(map[string]any)
+		set := exercise["sets"].([]any)[0].(map[string]any)
+		for key, value := range fields {
+			set[key] = value
+		}
+		return body
+	}
+	tempo := func(eccentricSeconds any) map[string]any {
+		phases := map[string]any{"eccentricSeconds": eccentricSeconds, "bottomPauseSeconds": 1, "concentricSeconds": 1, "topPauseSeconds": 0}
+		return modifiers(1, map[string]any{"kind": "tempo", "tempo": phases})
+	}
 	cases := []struct {
 		// name describes the weekly challenge.
 		name string
@@ -580,6 +622,39 @@ func TestWeeklyChallengeCountLimits(t *testing.T) {
 		{"51 sets", strength(1, 51, 0), false},
 		{"20 clusters", strength(1, 1, 20), true},
 		{"21 clusters", strength(1, 1, 21), false},
+		{"20 modifiers", modifiers(20, map[string]any{"kind": "tempo"}), true},
+		{"21 modifiers", modifiers(21, map[string]any{"kind": "tempo"}), false},
+		{"a modifier with two values", modifiers(1, map[string]any{"kind": "chains", "percent": 20, "weightKilograms": 10}), false},
+		{"a negative modifier weight", modifiers(1, map[string]any{"kind": "bands", "weightKilograms": -1}), false},
+		{"30 muscle groups", muscles(30), true},
+		{"31 muscle groups", muscles(31), false},
+		{"a 90 degree angle", withExercise(map[string]any{"angleDegrees": 90}), true},
+		{"a -90 degree angle", withExercise(map[string]any{"angleDegrees": -90}), true},
+		{"a 91 degree angle", withExercise(map[string]any{"angleDegrees": 91}), false},
+		{"a -91 degree angle", withExercise(map[string]any{"angleDegrees": -91}), false},
+		{"a fractional angle", withExercise(map[string]any{"angleDegrees": 30.5}), false},
+		{"a negative volume", withExercise(map[string]any{"volumeKilograms": -1}), false},
+		{"zero reps in reserve", withSet(map[string]any{"repsInReserve": 0}), true},
+		{"negative reps in reserve", withSet(map[string]any{"repsInReserve": -1}), false},
+		{"fractional reps in reserve", withSet(map[string]any{"repsInReserve": 1.5}), false},
+		{"negative right side reps in reserve", withSet(map[string]any{"right": map[string]any{"reps": 5, "repsInReserve": -1}}), false},
+		{"a tempo", tempo(3), true},
+		{"a negative tempo phase", tempo(-1), false},
+		{"a fractional tempo phase", tempo(2.5), false},
+		{"a negative percent", modifiers(1, map[string]any{"kind": "chains", "percent": -1}), false},
+		{"a negative velocity", modifiers(1, map[string]any{"kind": "isokinetic", "velocityMetersPerSecond": -0.5}), false},
+		{"a negative weight per rep", modifiers(1, map[string]any{"kind": "progression", "weightPerRepKilograms": -1}), false},
+		{"a tempo with a second value", modifiers(1, map[string]any{"kind": "tempo", "tempo": map[string]any{"eccentricSeconds": 3, "bottomPauseSeconds": 1, "concentricSeconds": 1, "topPauseSeconds": 0}, "percent": 20}), false},
+		{"an unknown modifier kind", modifiers(1, map[string]any{"kind": "levitation"}), true},
+		{"a malformed modifier kind", modifiers(1, map[string]any{"kind": "Tempo"}), false},
+		{"a missing modifier kind", modifiers(1, map[string]any{"percent": 20}), false},
+		{"an unknown assist mode", modifiers(1, map[string]any{"kind": "assist", "assist": "telepathy"}), true},
+		{"a malformed assist mode", modifiers(1, map[string]any{"kind": "assist", "assist": "gradual-reduce"}), false},
+		{"a malformed partial range", modifiers(1, map[string]any{"kind": "partialRange", "partialRange": ""}), false},
+		{"an unknown muscle group", muscle("wings", "primary"), true},
+		{"a malformed muscle group", muscle("Chest", "primary"), false},
+		{"a malformed muscle intensity", muscle("chest", "very high"), false},
+		{"a missing muscle intensity", muscle("chest", ""), false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

@@ -283,6 +283,7 @@ func baseActivity(id string) map[string]any {
 			"activeEnergyKilocalories":    400.0,
 			"averageHeartRate":            130.0,
 			"maximumHeartRate":            170.0,
+			"minimumHeartRate":            90.0,
 			"averageSpeedMetersPerSecond": 1.4,
 			"elevationGainMeters":         30.0,
 			"elevationLossMeters":         28.0,
@@ -297,7 +298,11 @@ func baseActivity(id string) map[string]any {
 			"weather":                     map[string]any{"temperatureCelsius": 12.0, "humidityPercent": 60.0},
 		},
 		"hasRoute": true,
-		"strength": map[string]any{"exercises": []any{baseExercise()}},
+		"strength": map[string]any{
+			"exercises": []any{baseExercise()},
+			"deload":    true,
+			"muscles":   []any{map[string]any{"group": "chest", "intensity": "primary"}},
+		},
 	}
 }
 
@@ -308,6 +313,19 @@ func baseExercise() map[string]any {
 		"name":             "Landmine Press",
 		"loadIsAssistance": false,
 		"sets":             []any{baseSet()},
+		"personalRecord":   true,
+		"injured":          true,
+		"angleDegrees":     30,
+		"volumeKilograms":  250.0,
+		"modifiers": []any{
+			map[string]any{"kind": "assist", "assist": "gradualReduce"},
+			map[string]any{"kind": "partialRange", "partialRange": "lengthened"},
+			map[string]any{"kind": "chains", "percent": 20.0},
+			map[string]any{"kind": "tempo", "tempo": map[string]any{"eccentricSeconds": 3, "bottomPauseSeconds": 1, "concentricSeconds": 1, "topPauseSeconds": 0}},
+			map[string]any{"kind": "isokinetic", "velocityMetersPerSecond": 0.5},
+			map[string]any{"kind": "bands", "weightKilograms": 10.0},
+			map[string]any{"kind": "progression", "weightPerRepKilograms": 1.0},
+		},
 	}
 }
 
@@ -319,8 +337,9 @@ func baseSet() map[string]any {
 		"durationSeconds": 40.0,
 		"distanceMeters":  20.0,
 		"weightKilograms": 25.0,
-		"right":           map[string]any{"reps": 8, "durationSeconds": 30.0, "weightKilograms": 20.0},
+		"right":           map[string]any{"reps": 8, "durationSeconds": 30.0, "weightKilograms": 20.0, "repsInReserve": 2},
 		"clusters":        []any{map[string]any{"reps": 4, "weightKilograms": 15.0}},
+		"repsInReserve":   1,
 	}
 }
 

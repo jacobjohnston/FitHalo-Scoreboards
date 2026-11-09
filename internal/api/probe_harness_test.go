@@ -384,7 +384,7 @@ func everythingChallenge(day string, id string) map[string]any {
 			"durationSeconds": 1800, "distanceMeters": 5000,
 			"start": day + "T07:00:00+02:00",
 			"details": map[string]any{
-				"activeEnergyKilocalories": 400, "averageHeartRate": 150, "maximumHeartRate": 180,
+				"activeEnergyKilocalories": 400, "averageHeartRate": 150, "maximumHeartRate": 180, "minimumHeartRate": 95,
 				"averageSpeedMetersPerSecond": 2.8, "elevationGainMeters": 50, "elevationLossMeters": 45,
 				"steps": 6000, "averageCadence": 170, "averagePowerWatts": 250, "averageMETs": 9.5,
 				"carriedLoadKilograms": 10, "inclinePercent": 1.5, "strollerLoadKilograms": 12,
@@ -392,14 +392,28 @@ func everythingChallenge(day string, id string) map[string]any {
 				"weather":                    map[string]any{"temperatureCelsius": 18, "humidityPercent": 60},
 			},
 			"hasRoute": true,
-			"strength": map[string]any{"exercises": []any{map[string]any{
-				"catalogID": "8d9d1a3e-2f4b-4c7a-9e1f-0a1b2c3d4e5f", "name": "Custom", "loadIsAssistance": false,
-				"sets": []any{map[string]any{
-					"type": "normal", "reps": 8, "durationSeconds": 30, "distanceMeters": 20, "weightKilograms": 60,
-					"right":    map[string]any{"reps": 8, "durationSeconds": 30, "weightKilograms": 60},
-					"clusters": []any{map[string]any{"reps": 3, "weightKilograms": 50}},
+			"strength": map[string]any{
+				"deload":  true,
+				"muscles": []any{map[string]any{"group": "chest", "intensity": "primary"}},
+				"exercises": []any{map[string]any{
+					"catalogID": "8d9d1a3e-2f4b-4c7a-9e1f-0a1b2c3d4e5f", "name": "Custom", "loadIsAssistance": false,
+					"personalRecord": true, "injured": true, "angleDegrees": 30, "volumeKilograms": 960,
+					"modifiers": []any{
+						map[string]any{"kind": "assist", "assist": "instant"},
+						map[string]any{"kind": "partialRange", "partialRange": "shortened"},
+						map[string]any{"kind": "chains", "percent": 20},
+						map[string]any{"kind": "tempo", "tempo": map[string]any{"eccentricSeconds": 3, "bottomPauseSeconds": 1, "concentricSeconds": 1, "topPauseSeconds": 0}},
+						map[string]any{"kind": "isokinetic", "velocityMetersPerSecond": 0.5},
+						map[string]any{"kind": "bands", "weightKilograms": 10},
+						map[string]any{"kind": "progression", "weightPerRepKilograms": 1},
+					},
+					"sets": []any{map[string]any{
+						"type": "normal", "reps": 8, "durationSeconds": 30, "distanceMeters": 20, "weightKilograms": 60, "repsInReserve": 2,
+						"right":    map[string]any{"reps": 8, "durationSeconds": 30, "weightKilograms": 60, "repsInReserve": 1},
+						"clusters": []any{map[string]any{"reps": 3, "weightKilograms": 50}},
+					}},
 				}},
-			}}},
+			},
 		}},
 	}
 }

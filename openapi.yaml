@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FitHalo Scoreboards
-  version: '1.0'
+  version: '1.1'
   summary: The API a FitHalo Scoreboard serves to the FitHalo apps.
   license:
     name: Apache-2.0
@@ -20,7 +20,8 @@ info:
     - **Identifiers** (`MemberID`, `ActivityID`, the board's `id`) are 16 bytes in unpadded base64url,
       22 characters.
     - **Unknown fields are ignored** by both sides, so either can add an optional field without breaking
-      the other. **Open vocabularies** (activity types, set types, tiers) list their known values in
+      the other. **Open vocabularies** (activity types, set types, tiers, and from 1.1 muscle groups and
+      intensities, modifier kinds, assist modes and partial ranges) list their known values in
       `spec/vocabularies.json`; a client shows a value it does not know generically rather than failing.
       Other open values say so where they are defined; see **Versions**.
     - **Reads carry an `ETag`** and honour `If-None-Match`, so a client opening a board that has not
@@ -56,6 +57,8 @@ info:
       | `Board.joinMode` | No join mode shown; `acceptingRequests` and `passwordRequired` still say whether and how to join |
       | `Board.ranking`, `Scoreboard.ranking` | The order of `entries` as the server sent it |
       | Activity types, set types, tiers | Shown generically (`spec/vocabularies.json`) |
+      | Muscle groups, muscle intensities | Left off the muscle map |
+      | Modifier kinds, assist modes, partial ranges | Shown generically, or the modifier without its value |
       | Problem codes | Handled by the problem's `status` |
     - **Sharing grows by fields, never by levels.** A kind of sharing a later version adds is a new optional
       field of `Sharing`, at its most private when absent. In `JoinRequest` an absent field is its most
@@ -95,7 +98,7 @@ info:
     | Members | 1,000 a board, waiting and active together; a join past it is refused with `memberLimitReached` |
     | Custom exercise name | 1 to 100 characters, with no control, format or line-separator characters, apart from the joiners and tags inside an emoji |
     | Avatar upload | JPEG or PNG, 256 KB, at most 2048 pixels a side and 3,145,728 pixels in all; served as JPEG, at most 512 × 512 |
-    | Weekly challenge body | 384 KB, so a stored weekly challenge fits any backend, DynamoDB's 400 KB items included; 200 activities, 50 exercises an activity, 50 sets an exercise, 20 clusters a set |
+    | Weekly challenge body | 384 KB, so a stored weekly challenge fits any backend, DynamoDB's 400 KB items included; 200 activities, 50 exercises an activity, 50 sets an exercise, 20 clusters a set, 20 modifiers an exercise, 30 muscle groups an activity |
     | Route | 5,000 points, 256 KB |
     | Weekly challenge storage | 1 MB for one member's weekly challenge and its routes together; a weekly challenge or route upload that would store more is refused with `payloadTooLarge`, while replacing a route counts only the new one |
     | Clock skew | 300 seconds either way |
@@ -800,7 +803,7 @@ components:
           description: The `MAJOR.MINOR` version of this document the server implements. See **Versions**.
           type: string
           pattern: '^[0-9]+\.[0-9]+$'
-          example: '1.0'
+          example: '1.1'
         serverVersion:
           description: The server build's version, for people. Clients never compare it.
           type: string
@@ -1034,6 +1037,10 @@ components:
         maximumHeartRate:
           type: number
           minimum: 0
+        minimumHeartRate:
+          description: Beats per minute. Added in 1.1.
+          type: number
+          minimum: 0
         averageSpeedMetersPerSecond:
           description: Clients show pace or speed as the activity calls for.
           type: number
@@ -1089,6 +1096,28 @@ components:
           maxItems: 50
           items:
             $ref: '#/components/schemas/StrengthExercise'
+        deload:
+          description: The session was run as a deload. Added in 1.1.
+          type: boolean
+        muscles:
+          description: |
+            How hard the session worked each muscle group, for a muscle map. A group appears once, at the
+            hardest any one exercise worked it. Added in 1.1.
+          type: array
+          maxItems: 30
+          items:
+            $ref: '#/components/schemas/StrengthMuscle'
+    StrengthMuscle:
+      description: One muscle group a strength workout worked. Added in 1.1.
+      type: object
+      required: [group, intensity]
+      properties:
+        group:
+          description: Open vocabulary, `spec/vocabularies.json`.
+          type: string
+        intensity:
+          description: Open vocabulary, `spec/vocabularies.json`.
+          type: string
     StrengthExercise:
       description: |
         A bundled exercise travels as its `catalogID`, so each viewer reads its name in their own
@@ -1111,6 +1140,78 @@ components:
           maxItems: 50
           items:
             $ref: '#/components/schemas/StrengthSet'
+        personalRecord:
+          description: The exercise beat every earlier session of the same movement. Added in 1.1.
+          type: boolean
+        injured:
+          description: The exercise was trained around an injury. Added in 1.1.
+          type: boolean
+        angleDegrees:
+          description: The angle the exercise was set up at, such as a bench's incline; negative for a decline. Added in 1.1.
+          type: integer
+          minimum: -90
+          maximum: 90
+        modifiers:
+          description: The load, range and cadence behaviours applied to the exercise. Added in 1.1.
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/StrengthModifier'
+        volumeKilograms:
+          description: The load the exercise moved across its sets. Added in 1.1.
+          type: number
+          minimum: 0
+    StrengthModifier:
+      description: |
+        One behaviour applied to an exercise, carrying at most one value; which one depends on the kind and
+        on how the member stated it. Added in 1.1.
+      type: object
+      required: [kind]
+      properties:
+        kind:
+          description: Open vocabulary, `spec/vocabularies.json`.
+          type: string
+        assist:
+          description: How the machine or a spotter steps in. Open vocabulary, `spec/vocabularies.json`.
+          type: string
+        partialRange:
+          description: The part of the range the reps go through. Open vocabulary, `spec/vocabularies.json`.
+          type: string
+        percent:
+          description: A share of the working load, 125 meaning 125%.
+          type: number
+          minimum: 0
+        tempo:
+          $ref: '#/components/schemas/StrengthTempo'
+        velocityMetersPerSecond:
+          description: A target cable velocity.
+          type: number
+          minimum: 0
+        weightKilograms:
+          description: An absolute load, such as a band's or chains'.
+          type: number
+          minimum: 0
+        weightPerRepKilograms:
+          description: A load added or removed after every rep.
+          type: number
+          minimum: 0
+    StrengthTempo:
+      description: The seconds spent in each phase of a rep, in the order a lifter counts them. Added in 1.1.
+      type: object
+      required: [eccentricSeconds, bottomPauseSeconds, concentricSeconds, topPauseSeconds]
+      properties:
+        eccentricSeconds:
+          type: integer
+          minimum: 0
+        bottomPauseSeconds:
+          type: integer
+          minimum: 0
+        concentricSeconds:
+          type: integer
+          minimum: 0
+        topPauseSeconds:
+          type: integer
+          minimum: 0
     StrengthSet:
       description: |
         For a set split per side, the top-level fields are the left side and `right` the right.
@@ -1140,6 +1241,10 @@ components:
           maxItems: 20
           items:
             $ref: '#/components/schemas/StrengthCluster'
+        repsInReserve:
+          description: How many more reps the lifter reported they could have done. Added in 1.1.
+          type: integer
+          minimum: 0
     StrengthSide:
       type: object
       properties:
@@ -1151,6 +1256,10 @@ components:
           minimum: 0
         weightKilograms:
           type: number
+          minimum: 0
+        repsInReserve:
+          description: Added in 1.1.
+          type: integer
           minimum: 0
     StrengthCluster:
       type: object

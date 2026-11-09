@@ -236,6 +236,9 @@ type ActivityDetails struct {
 	// MaximumHeartRate is in beats per minute.
 	MaximumHeartRate *float64 `json:"maximumHeartRate,omitempty"`
 
+	// MinimumHeartRate is in beats per minute. Added in 1.1.
+	MinimumHeartRate *float64 `json:"minimumHeartRate,omitempty"`
+
 	// AverageSpeedMetersPerSecond is shown as pace or speed as the activity calls for.
 	AverageSpeedMetersPerSecond *float64 `json:"averageSpeedMetersPerSecond,omitempty"`
 
@@ -286,6 +289,21 @@ type Weather struct {
 type Strength struct {
 	// Exercises is the exercises in the order they were done.
 	Exercises []StrengthExercise `json:"exercises"`
+
+	// Deload reports whether the session was run as a deload. Added in 1.1.
+	Deload *bool `json:"deload,omitempty"`
+
+	// Muscles is how hard the session worked each muscle group. Added in 1.1.
+	Muscles *[]StrengthMuscle `json:"muscles,omitempty"`
+}
+
+// StrengthMuscle is one muscle group a strength workout worked. Added in 1.1.
+type StrengthMuscle struct {
+	// Group is the muscle group's slug from spec/vocabularies.json.
+	Group string `json:"group"`
+
+	// Intensity is the hardest the group was worked, a slug from spec/vocabularies.json.
+	Intensity string `json:"intensity"`
 }
 
 // StrengthExercise is one exercise and its sets.
@@ -301,6 +319,63 @@ type StrengthExercise struct {
 
 	// Sets is the exercise's sets in order.
 	Sets []StrengthSet `json:"sets"`
+
+	// AngleDegrees is the angle the exercise was set up at, such as a bench's incline. Added in 1.1.
+	AngleDegrees *int64 `json:"angleDegrees,omitempty"`
+
+	// Injured reports whether the exercise was trained around an injury. Added in 1.1.
+	Injured *bool `json:"injured,omitempty"`
+
+	// Modifiers is the load, range and cadence behaviours applied to the exercise. Added in 1.1.
+	Modifiers *[]StrengthModifier `json:"modifiers,omitempty"`
+
+	// PersonalRecord reports whether the exercise beat every earlier session of the same movement. Added in 1.1.
+	PersonalRecord *bool `json:"personalRecord,omitempty"`
+
+	// VolumeKilograms is the load the exercise moved across its sets. Added in 1.1.
+	VolumeKilograms *float64 `json:"volumeKilograms,omitempty"`
+}
+
+// StrengthModifier is one behaviour applied to an exercise, carrying at most one value. Added in 1.1.
+type StrengthModifier struct {
+	// Kind is the modifier's slug from spec/vocabularies.json.
+	Kind string `json:"kind"`
+
+	// Assist is how the machine or a spotter steps in, a slug from spec/vocabularies.json.
+	Assist *string `json:"assist,omitempty"`
+
+	// PartialRange is the part of the range the reps went through, a slug from spec/vocabularies.json.
+	PartialRange *string `json:"partialRange,omitempty"`
+
+	// Percent is a share of the working load, 125 meaning 125%.
+	Percent *float64 `json:"percent,omitempty"`
+
+	// Tempo is the seconds spent in each phase of a rep.
+	Tempo *StrengthTempo `json:"tempo,omitempty"`
+
+	// VelocityMetersPerSecond is a target cable velocity.
+	VelocityMetersPerSecond *float64 `json:"velocityMetersPerSecond,omitempty"`
+
+	// WeightKilograms is an absolute load, such as a band's or chains'.
+	WeightKilograms *float64 `json:"weightKilograms,omitempty"`
+
+	// WeightPerRepKilograms is a load added or removed after every rep.
+	WeightPerRepKilograms *float64 `json:"weightPerRepKilograms,omitempty"`
+}
+
+// StrengthTempo is the seconds spent in each phase of a rep, in the order a lifter counts them. Added in 1.1.
+type StrengthTempo struct {
+	// EccentricSeconds is the lowering phase.
+	EccentricSeconds int64 `json:"eccentricSeconds"`
+
+	// BottomPauseSeconds is the pause at the bottom.
+	BottomPauseSeconds int64 `json:"bottomPauseSeconds"`
+
+	// ConcentricSeconds is the lifting phase.
+	ConcentricSeconds int64 `json:"concentricSeconds"`
+
+	// TopPauseSeconds is the pause at the top.
+	TopPauseSeconds int64 `json:"topPauseSeconds"`
 }
 
 // StrengthSet is one set. A set split per side keeps the left side at the top level.
@@ -325,6 +400,9 @@ type StrengthSet struct {
 
 	// Clusters is the efforts after the first in a drop set or a myo-rep set.
 	Clusters *[]StrengthCluster `json:"clusters,omitempty"`
+
+	// RepsInReserve is how many more reps the lifter reported they could have done. Added in 1.1.
+	RepsInReserve *int64 `json:"repsInReserve,omitempty"`
 }
 
 // StrengthSide is the right side of a set split per side.
@@ -337,6 +415,9 @@ type StrengthSide struct {
 
 	// WeightKilograms is the right side's load.
 	WeightKilograms *float64 `json:"weightKilograms,omitempty"`
+
+	// RepsInReserve is the right side's reported reps in reserve. Added in 1.1.
+	RepsInReserve *int64 `json:"repsInReserve,omitempty"`
 }
 
 // StrengthCluster is one effort after the first in a drop set or a myo-rep set.
